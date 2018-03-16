@@ -76,6 +76,9 @@ class WPC_mail {
     }
   
 	public function wpcem_register_fields(){
+		//Get all array roles
+		$list_roles = $this->get_all_user_roles();
+		
 		if( function_exists('acf_add_local_field_group') ){
 			acf_add_local_field_group(array(
 				'key' => 'group_5aa90ba279ba0',
@@ -161,9 +164,8 @@ class WPC_mail {
 						'key' => 'field_5aa90f9202085',
 						'label' => 'Target user group',
 						'name' => 'email_template_target_user_group',
-						'type' => 'checkbox',
-						'instructions' => 'administrator : Administrateurs', //TODO AJOUTER DYNAMIQUEMENT la liste
-ET IL Y A UNE ERREU 9A NE DOIS PAS ETRE DANS INSTRUCTIONS !!!
+						'type' => 'checkbox',				  
+						'instructions' => '', 
 						'required' => 0,
 						'conditional_logic' => 0,
 						'wrapper' => array(
@@ -171,13 +173,12 @@ ET IL Y A UNE ERREU 9A NE DOIS PAS ETRE DANS INSTRUCTIONS !!!
 							'class' => '',
 							'id' => '',
 						),
-						'choices' => array(
-						),
+						'choices' => $list_roles,	
 						'allow_custom' => 0,
 						'save_custom' => 0,
 						'default_value' => array(
 						),
-						'layout' => 'vertical',
+						'layout' => 'horizontal',
 						'toggle' => 0,
 						'return_format' => 'value',
 					),
@@ -226,7 +227,9 @@ ET IL Y A UNE ERREU 9A NE DOIS PAS ETRE DANS INSTRUCTIONS !!!
 							'param' => 'post_type',
 							'operator' => '==',
 							'value' => 'wpcem_mail_template',
-						),					  
+						),
+					),
+					array(
 						array(
 							'param' => 'post_type',
 							'operator' => '==',
@@ -245,7 +248,6 @@ ET IL Y A UNE ERREU 9A NE DOIS PAS ETRE DANS INSTRUCTIONS !!!
 			));
 
 		}//end if function_exists("register_field_group")
-		
 		
 		/** EMAILS SAVE **/
 		acf_add_local_field_group(array(
@@ -334,6 +336,17 @@ ET IL Y A UNE ERREU 9A NE DOIS PAS ETRE DANS INSTRUCTIONS !!!
 	   return $mail_text;
    }
 	
+   private function get_all_user_roles(){
+	   $roles = array();
+	   if ( ! function_exists( 'get_editable_roles' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/user.php';
+		}
+	   foreach (get_editable_roles() as $role_name => $role_info){
+		   $roles[strtolower($role_name)] = $role_name;
+	   }
+	   return $roles;
+   }
+   
 	/**
 	* 
 	* @param string $key
@@ -376,12 +389,56 @@ $to_direct=false;
    
 	/**
 	 * get all email coniguren in the email type
+	 * ->DATA infos possibles
+	 * 1)'string' true/false array or string return
+	 * 2)'list_emails' string or array, add emails from the call of the function
+	 * 
 	 */
 	function wpcmail_get_destinataires_by_postid($post_ID_emailtype,$data = array()){
 		
-//TODO REVOIR COMPLETEMENT CETTE PARTIE
-//Dois prevoir de prendre le groups/la ligne direct ou eventuellement un de plus de 'lappel meme de la fonction
+		$to_list = array();
 		
+		/* get group users */
+		$target_user_group = get_field('email_template_target_user_group',$post_ID_emailtype);
+		if($target_user_group){
+			foreach($target_user_group as $key_edi=>$edi){
+				$args_users = array(
+					'role'		=> $edi, //role__in ne marchais pas
+					'fields'	=> 'all',
+				 ); 
+				$all_users = get_users( $args_users );
+				if($all_users){
+					foreach($all_users as $user_to){
+						$to_list[] = $user_to->user_email;
+					}
+				}
+			}
+		}
+		
+		/* get user mails list (string) */
+		$target_manual_add = get_field('email_template_target_manual_add',$post_ID_emailtype);
+		if($target_manual_add){
+			$to_list[] = $target_manual_add;
+		}
+		
+		/* list emails added from function call */
+		if(isset($data['list_emails'])){
+			if(is_array($data['list_emails'])){
+				$to_list = array_merge($to_list,$data['list_emails']);
+			}else{
+				$to_list[] = $data['list_emails'];
+			}
+		}
+		
+		/* return string or array depending of option, default : array */
+		if(isset($data['string'])){
+			$to_list = implode(',', $to_list);
+		}		
+		return $to_list;
+		
+		
+//TODO REVOIR COMPLETEMENT CETTE PARTIE
+//Dois prevoir de prendre le groups/la ligne direct ou eventuellement un de plus de 'lappel meme de la fonction		
 		
 //		$email_destinataire_interne = get_field('email_destinataire_interne',$post_ID_emailtype);
 //		$email_destinataire_interne_plus = get_field('email_to_add',$post_ID_emailtype);

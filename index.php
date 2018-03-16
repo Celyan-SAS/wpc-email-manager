@@ -5,7 +5,7 @@
  *	@version 0.0.1
  */
 /*
- Plugin Name: CSV to WP
+ Plugin Name: W&Co Custom emails manager
  Plugin URI: https://wordpressandco.fr/
  Description: WP&Co Custom emails manager
  Version: 0.0.1
