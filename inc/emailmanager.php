@@ -6,6 +6,11 @@ class WPC_mail {
   
 	/** singleton */
     private static $instance = null;
+	
+	/** vars **/
+	private $_options_id_from		 = 'wpcmailoptionidfrom';
+	private $_options_id_replyto	 = 'wpcmailoptionidreplyto';
+	private $_options_id_tradutction = 'wpcmailoptionidtraduction';
  
     /**
      * Creates or returns an instance
@@ -22,11 +27,127 @@ class WPC_mail {
 
 		add_action( 'init', array($this,'wpcem_register_cpts'),10);
 		add_action( 'init', array($this,'wpcem_register_fields'),11);
+		
+		/**ADMIN**/
+        if(!is_admin()){
+            return;
+        }
+        add_action('admin_menu', array($this, 'importcsv_menu'));
+        add_action('admin_init', array($this, 'wpcmail_process_post'));
 	}
   
+	public function wpcmail_menu(){
+		$page_title = 'WPC Email manager';
+        $menu_title = 'WPC Email manager';
+        $capability = 'manage_options';
+        $menu_slug = 'wpcemailmanager';
+        $function = array($this, 'wpcemailmanager_main_menu_options');
+        $icon_url = 'dashicons-upload';
+
+        add_menu_page($page_title, $menu_title, $capability, $menu_slug, $function, $icon_url);
+	}
+	
+	public function wpcmail_process_post(){
+		
+		if(isset($_POST['form_from_default'])){
+			$tosave_from = array();
+			$tosave_from[] = $_POST['from_name_option'];
+			$tosave_from[] = $_POST['from_email_option'];
+			$tosave = json_encode($tosave_from);
+			update_option($this->_options_id_from,$tosave);
+		}
+		
+		if(isset($_POST['replyto_from_default'])){
+			$tosave_replyto = array();
+			$tosave_replyto[] = $_POST['replyto_name_option'];
+			$tosave_replyto[] = $_POST['replyto_email_option'];
+			$tosave = json_encode($tosave_replyto);
+			update_option($this->_options_id_replyto,$tosave);			
+		}
+		
+		if(isset($_POST['wpcmail_trad_id'])){
+			
+		}
+	}
+	
+	public function wpcemailmanager_main_menu_options(){
+		echo '<div class="wrap">';
+        echo '<h2>'.__('Options email manager','wpc_emailmanager').'</h2>';
+		
+		/* form option FROM default */
+		$data_from = get_option($this->_options_id_from,false);
+		$value_name_from = "";
+		$value_email_from = "";
+		if($data_from){
+			$data_from = json_decode($data_from);
+			$value_name_from = $data_from['name'];
+			$value_email_from = $data_from['email'];
+		}
+		echo '<hr>';
+		echo '<p>';
+		echo '<form action="" method="POST" >';
+		echo '<span>"From" default option</span>';
+		echo '<div>';
+			echo '<span>"From" name</span>';
+			echo '<input type="text" name="from_name_option" value="'.$value_name_from.'">';
+		echo '</div>';
+		echo '<div>';
+			echo '<span>"From" Email</span>';
+			echo '<input type="text" name="from_email_option" value="'.$value_email_from.'">';
+		echo '</div>';		
+		echo '<input type="submit" value="'.__('Save','wpcemailmanager').'">';
+		echo '<input type="hidden" name="form_from_default" value="form_from_default">';
+		echo '</form>';
+		echo '</p>';
+		
+		/* form option REPLY TO default */
+		$data_replyto = get_option($this->_options_id_replyto,false);
+		$value_name_replyto = "";
+		$value_email_replyto = "";
+		if($data_replyto){
+			$data_replyto = json_decode($data_replyto);
+			$value_name_replyto = $data_replyto['name'];
+			$value_email_replyto = $data_replyto['email'];
+		}
+		echo '<hr>';
+		echo '<p>';		
+		echo '<form action="" method="POST" >';
+		echo '<span>"Reply to" default option</span>';
+		echo '<div>';
+			echo '<span>"Reply to" name</span>';
+			echo '<input type="text" name="replyto_name_option" value="'.$value_name_replyto.'">';
+		echo '</div>';
+		echo '<div>';
+			echo '<span>"From" Email</span>';
+			echo '<input type="text" name="replyto_email_option" value="'.$value_email_replyto.'">';
+		echo '</div>';			
+		echo '<input type="submit" value="'.__('Save','wpcemailmanager').'">';
+		echo '<input type="hidden" name="replyto_from_default" value="replyto_from_default">';
+		echo '</form>';
+		echo '</p>';
+		
+		/* form option traductoin id name default */
+		echo '<hr>';
+		echo '<p>';		
+		echo '<form action="" method="POST" >';
+		echo '<div>';
+			echo '<span>Traduction ID for POEDIT option</span>';
+			echo '<input type="text" name="trad_id">';
+		echo '</div>';		
+		echo '<input type="submit" value="'.__('Save','wpcemailmanager').'">';
+		echo '<input type="hidden" name="wpcmail_trad_id" value="wpcmail_trad_id">';
+		echo '</form>';
+		echo '</p>';		
+		
+		echo '</div>';
+	}
+	
 	/**
 	 * $data support :
 	 * $data['list_emails'] -> add 
+	 * $data['subject'] -> surcharge le sujet dans le template
+	 * $data['array_replace_values_subject'] -> array of values to replace
+	 * $data['array_replace_values_body'] -> array of values to replace
 	 * 
 	 * @param string $key
 	 * @param array $data
@@ -39,24 +160,29 @@ class WPC_mail {
 			 return false;
 		 }
 		 
+		 //HEADERS
+		 $headers = array();
+		 $headers[] = 'Content-Type: text/html; charset=UTF-8';		 
+		 
+		 //DESTINATAIRE
 		 $to = $this->wpcmail_get_destinataires_by_postid($post_acf_data->ID,$data);
-		 $subject = get_field('email_template_subject',$post_acf_data->ID);
+		 //SUBJECT
+		 $subject_data = get_field('email_template_subject',$post_acf_data->ID);
+		 $subject = $this->wpcmail_format_email_subject($subject_data,$data);
+		 //BODY TEXT
 		 $body = get_field('$post_acf_data->post_content',$post_acf_data->ID);
 		 $mail_text = $this->wpcmail_format_email_text($body,$data);
-
+		 //FROM
 		 $from_name = get_field('email_template_sender',$post_acf_data->ID);
 		 $from_email = get_field('email_template_sender_email',$post_acf_data->ID);
-		 $reply_to_name = get_field('email_template_reply-to',$post_acf_data->ID);
-		 $reply_to_email = get_field('email_template_reply-to_email',$post_acf_data->ID);
-		 
-		 $headers = array();
-		 $headers[] = 'Content-Type: text/html; charset=UTF-8';
 		 if($from_name && $from_email){
 			 $headers[] = 'From: '.$from_name.' <'.$from_email.'>';
 		 }elseif($from_email){
 			 $headers[] = 'From: '.$from_email.'';
-		 }
-		 
+		 }		 
+		 //REPLY TO
+		 $reply_to_name = get_field('email_template_reply-to',$post_acf_data->ID);
+		 $reply_to_email = get_field('email_template_reply-to_email',$post_acf_data->ID);
 		 if($reply_to_name && $reply_to_email){
 			 $headers[] = 'Reply-To: '.$reply_to_name.' <'.$reply_to_email.'>';
 		 }elseif($reply_to_email){
@@ -64,7 +190,12 @@ class WPC_mail {
 		 }
 		 
 		 // send email
-		 return wp_mail($to, $subject, $mail_text, $headers);
+		 $result = wp_mail($to, $subject, $mail_text, $headers);
+		 
+		 if($result){
+			$this->wpcmail_save_history_mail($to, $subject, $mail_text, $headers);
+		 }		 
+		 return $result;
 	}
 	
     public function wpcem_register_cpts() {
@@ -416,16 +547,46 @@ class WPC_mail {
 		return $posts[0];
 	}
 
+	private function wpcmail_save_history_mail(){
+		
+	}
+	
+	/**
+	 * Return subject 
+	 * @param type $subject
+	 * @param type $data
+	 * @return string subject of the mail
+	 */
+	private function wpcmail_format_email_subject($subject,$data){
+		
+		//if isset overload the $subject of the template
+		if(isset($data['subject'])){
+			$subject = $data['subject'];
+		}
+		//translation if needed
+		$subject = __($subject,$this->namefiletranslation);
+		//filter in case
+		$subject = apply_filters( 'wpcmail_format_email_subject_filter', $subject);
+		
+		//replace elements if there is
+		if(count($data['array_replace_values_subject'])>0){
+			$subject = vsprintf($subject,$data['array_replace_values_subject']);			
+		}
+		
+		return $subject;
+	}
+	
 	/**
 	* format text for email
 	 * FILTER -> wpcmail_format_email_text_filter
 	*/
 	private function wpcmail_format_email_text($text,$data){
 		
+		$text = __($text,$this->namefiletranslation);
 		$text = apply_filters( 'wpcmail_format_email_text_filter', $text);
 		$text = apply_filters('the_content', $text);		
-		if(count($data['array_replace_values'])>0){
-			$text = vsprintf($text,$data['array_replace_values']);			
+		if(count($data['array_replace_values_body'])>0){
+			$text = vsprintf($text,$data['array_replace_values_body']);			
 		}
 		 
 		ob_start();            
