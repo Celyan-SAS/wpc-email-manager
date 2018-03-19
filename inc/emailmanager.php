@@ -19,12 +19,54 @@ class WPC_mail {
 	
 	public function __construct(){
 		add_filter( 'su/data/shortcodes', array($this,'register_avis_custom_shortcode'),10,1);
-		add_action("wp_enqueue_scripts", array($this,"wpcmail_scripts_enqueue"));
 
 		add_action( 'init', array($this,'wpcem_register_cpts'),10);
 		add_action( 'init', array($this,'wpcem_register_fields'),11);
 	}
   
+	/**
+	 * $data support :
+	 * $data['list_emails'] -> add 
+	 * 
+	 * @param string $key
+	 * @param array $data
+	 */
+	public function wpcmail_mail_sender($key,$data = array()){
+
+		 //used to find the post by an acf field
+		 $post_acf_data = $this->wpcmail_get_email_type_by_field($key);
+		 if(!$post_acf_data){
+			 return false;
+		 }
+		 
+		 $to = $this->wpcmail_get_destinataires_by_postid($post_acf_data->ID,$data);
+		 $subject = get_field('email_template_subject',$post_acf_data->ID);
+		 $body = get_field('$post_acf_data->post_content',$post_acf_data->ID);
+		 $mail_text = $this->wpcmail_format_email_text($body,$data);
+
+		 $from_name = get_field('email_template_sender',$post_acf_data->ID);
+		 $from_email = get_field('email_template_sender_email',$post_acf_data->ID);
+		 $reply_to_name = get_field('email_template_reply-to',$post_acf_data->ID);
+		 $reply_to_email = get_field('email_template_reply-to_email',$post_acf_data->ID);
+		 
+		 $headers = array();
+		 $headers[] = 'Content-Type: text/html; charset=UTF-8';
+		 if($from_name && $from_email){
+			 $headers[] = 'From: '.$from_name.' <'.$from_email.'>';
+		 }elseif($from_email){
+			 $headers[] = 'From: '.$from_email.'';
+		 }
+		 
+		 if($reply_to_name && $reply_to_email){
+			 $headers[] = 'Reply-To: '.$reply_to_name.' <'.$reply_to_email.'>';
+		 }elseif($reply_to_email){
+			 $headers[] = 'Reply-To: '.$reply_to_email.'';
+		 }
+		 
+		 // send email
+		 return wp_mail($to, $subject, $mail_text, $headers);
+	}
+	
     public function wpcem_register_cpts() {
 		/** COURRIERS **/
 		$labels_courriers = array(
@@ -124,7 +166,7 @@ class WPC_mail {
 					),
 					array(
 						'key' => 'field_5aa90c5602083',
-						'label' => 'Email sender',
+						'label' => 'Sender name',
 						'name' => 'email_template_sender',
 						'type' => 'text',
 						'instructions' => '',
@@ -142,8 +184,27 @@ class WPC_mail {
 						'maxlength' => '',
 					),
 					array(
+						'key' => 'field_5aa90c5602084',
+						'label' => 'Sender email',
+						'name' => 'email_template_sender_email',
+						'type' => 'text',
+						'instructions' => '',
+						'required' => 0,
+						'conditional_logic' => 0,
+						'wrapper' => array(
+							'width' => '',
+							'class' => '',
+							'id' => '',
+						),
+						'default_value' => '',
+						'placeholder' => '',
+						'prepend' => '',
+						'append' => '',
+						'maxlength' => '',
+					),				  
+					array(
 						'key' => 'field_5aa90c9a02084',
-						'label' => 'Email reply-to',
+						'label' => 'Reply-to name',
 						'name' => 'email_template_reply-to',
 						'type' => 'text',
 						'instructions' => '',
@@ -160,6 +221,25 @@ class WPC_mail {
 						'append' => '',
 						'maxlength' => '',
 					),
+					array(
+						'key' => 'field_5aa90c9a02085',
+						'label' => 'Email reply-to',
+						'name' => 'email_template_reply-to_email',
+						'type' => 'text',
+						'instructions' => '',
+						'required' => 0,
+						'conditional_logic' => 0,
+						'wrapper' => array(
+							'width' => '',
+							'class' => '',
+							'id' => '',
+						),
+						'default_value' => '',
+						'placeholder' => '',
+						'prepend' => '',
+						'append' => '',
+						'maxlength' => '',
+					),				  
 					array(
 						'key' => 'field_5aa90f9202085',
 						'label' => 'Target user group',
@@ -315,77 +395,62 @@ class WPC_mail {
 		
     }
 	
-	public function wpcmail_scripts_enqueue(){
-
+	/**
+	 * Return the post with data title, content and destinataire
+	 * @param string $key_field_value
+	 * @return post object
+	 */
+	private function wpcmail_get_email_type_by_field($key_field_value){
+		$args = array(
+			'posts_per_page'	=> 1,
+			'post_type'		=> 'wpcem_mail_template',
+			'meta_query'	=> array(
+				array(
+					'key'		=> 'email_id_code',
+					'value'		=> $key_field_value,
+					'compare'	=> '='
+				)
+			)
+		);	
+		$posts = get_posts( $args );
+		return $posts[0];
 	}
-	
+
 	/**
 	* format text for email
+	 * FILTER -> wpcmail_format_email_text_filter
 	*/
-   private function wpcmail_format_email_text($text){
-	   ob_start();            
-		   //header
-		   get_template_part('template-email_header');
-		   //text mail
-		   echo $text;
-		   //footer
-		   get_template_part('template-email_footer');
-		   //save
-		   $mail_text = ob_get_contents();
-	   ob_end_clean();
-	   return $mail_text;
-   }
-	
-   private function get_all_user_roles(){
-	   $roles = array();
-	   if ( ! function_exists( 'get_editable_roles' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/user.php';
-		}
-	   foreach (get_editable_roles() as $role_name => $role_info){
-		   $roles[strtolower($role_name)] = $role_name;
-	   }
-	   return $roles;
-   }
-   
-	/**
-	* 
-	* @param string $key
-	* @param array $data
-	*/
-   public function wpcmail_mail_sender($key,$data = array()){
-	   
-
-//TODO  changer la façon dont data ammene els infos :
-	    
-	   
-$id_compterendu = false;
-$array_replace = array();
-$to_direct=false;
-	   
-		//used to find the post by an acf field
-		$post_acf_data = get_email_type_by_field($key);
-
-		$to = $this->wpcmail_get_destinataires_by_postid($post_acf_data->ID);		
-		if($to == ""){
-			$to = $to_direct;
-		}else{
-			$to = $to.','.$to_direct;
-		}
-
-		$subject = $post_acf_data->post_title;
-		$text = $post_acf_data->post_content;
+	private function wpcmail_format_email_text($text,$data){
+		
+		$text = apply_filters( 'wpcmail_format_email_text_filter', $text);
 		$text = apply_filters('the_content', $text);		
-		if(count($array_replace)>0){
-			$text = vsprintf($text,$array_replace);			
-		}		
-		$mail_text = $this->wpcmail_format_email_text($text);
-
-		$headers = array();
-		$headers[] = 'Content-Type: text/html; charset=UTF-8';
-
-		// send email
-		return wp_mail($to, $subject,$mail_text,$headers);
-   }
+		if(count($data['array_replace_values'])>0){
+			$text = vsprintf($text,$data['array_replace_values']);			
+		}
+		 
+		ob_start();            
+			//header
+			get_template_part('template-email_header');
+			//text mail
+			echo $text;
+			//footer
+			get_template_part('template-email_footer');
+			//save
+			$mail_text = ob_get_contents();
+		ob_end_clean();
+		return $mail_text;
+	}
+	
+	private function get_all_user_roles(){
+		$roles = array();
+		if ( ! function_exists( 'get_editable_roles' ) ) {
+			 require_once ABSPATH . 'wp-admin/includes/user.php';
+		 }
+		foreach (get_editable_roles() as $role_name => $role_info){
+			$roles[strtolower($role_name)] = $role_name;
+		}
+		return $roles;
+	}
    
 	/**
 	 * get all email coniguren in the email type
@@ -394,7 +459,7 @@ $to_direct=false;
 	 * 2)'list_emails' string or array, add emails from the call of the function
 	 * 
 	 */
-	function wpcmail_get_destinataires_by_postid($post_ID_emailtype,$data = array()){
+	private function wpcmail_get_destinataires_by_postid($post_ID_emailtype,$data = array()){
 		
 		$to_list = array();
 		
@@ -434,58 +499,6 @@ $to_direct=false;
 		if(isset($data['string'])){
 			$to_list = implode(',', $to_list);
 		}		
-		return $to_list;
-		
-		
-//TODO REVOIR COMPLETEMENT CETTE PARTIE
-//Dois prevoir de prendre le groups/la ligne direct ou eventuellement un de plus de 'lappel meme de la fonction		
-		
-//		$email_destinataire_interne = get_field('email_destinataire_interne',$post_ID_emailtype);
-//		$email_destinataire_interne_plus = get_field('email_to_add',$post_ID_emailtype);
-//
-//		$to_list = array();
-//		if(isset($email_destinataire_interne) && $email_destinataire_interne && $email_destinataire_interne!=''){
-//
-//			$client = false;
-//			if($post_id_compterendu){
-//				$client_recherche =  get_field('cr_client_recherche',$post_id_compterendu);
-//				$client = get_field('recherche_info_client',$client_recherche->ID);
-//			}
-//
-//			//get all users
-//			foreach($email_destinataire_interne as $key_edi=>$edi){
-//
-//				if($edi == 'chargeclientele'){
-//
-//					if($client){
-//						//get the collab linked to this post
-//						$gestionnaire = get_field('user_gestionnaire','user_'.$client['ID']);
-//						$to_list[] = $gestionnaire['user_email'];
-//					}
-//
-//				}elseif($edi == 'client'){
-//
-//					if($client){
-//						$to_list[] = $client['user_email'];
-//					}
-//
-//				}else{
-//					$args_users = array(
-//						'role' => $edi, //role__in ne marchais pas
-//						'fields'       => 'all',
-//					 ); 
-//					$all_users = get_users( $args_users );
-//					foreach($all_users as $user_to){
-//						$to_list[] = $user_to->user_email;
-//					}
-//				}
-//			}
-//		}
-//		if(isset($email_destinataire_interne_plus) && $email_destinataire_interne_plus && $email_destinataire_interne_plus!=''){
-//			$to_list[] = $email_destinataire_interne_plus;
-//		}
-//		$list_text = implode(',', $to_list);
-//
-//		return $list_text;
+		return $to_list;		
 	}   
 }
