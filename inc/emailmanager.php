@@ -32,7 +32,7 @@ class WPC_mail {
         if(!is_admin()){
             return;
         }
-        add_action('admin_menu', array($this, 'importcsv_menu'));
+        add_action('admin_menu', array($this, 'wpcmail_menu'));
         add_action('admin_init', array($this, 'wpcmail_process_post'));
 	}
   
@@ -65,8 +65,9 @@ class WPC_mail {
 			update_option($this->_options_id_replyto,$tosave);			
 		}
 		
-		if(isset($_POST['wpcmail_trad_id'])){
-			
+		if(isset($_POST['trad_id'])){
+			$tosave = json_encode($_POST['trad_id']);
+			update_option($this->_options_id_tradutction,$tosave);			
 		}
 	}
 	
@@ -110,7 +111,7 @@ class WPC_mail {
 			$value_email_replyto = $data_replyto['email'];
 		}
 		echo '<hr>';
-		echo '<p>';		
+		echo '<p>';
 		echo '<form action="" method="POST" >';
 		echo '<span>"Reply to" default option</span>';
 		echo '<div>';
@@ -127,12 +128,17 @@ class WPC_mail {
 		echo '</p>';
 		
 		/* form option traductoin id name default */
+		$data_trad = get_option($this->_options_id_tradutction,false);
+		$value_email_trad = "";
+		if($data_trad){
+			$value_email_trad = $data_trad['email'];
+		}
 		echo '<hr>';
 		echo '<p>';		
 		echo '<form action="" method="POST" >';
 		echo '<div>';
 			echo '<span>Traduction ID for POEDIT option</span>';
-			echo '<input type="text" name="trad_id">';
+			echo '<input type="text" name="wpcmail_trad_id" value="'.$value_email_replyto.'">';
 		echo '</div>';		
 		echo '<input type="submit" value="'.__('Save','wpcemailmanager').'">';
 		echo '<input type="hidden" name="wpcmail_trad_id" value="wpcmail_trad_id">';
@@ -193,7 +199,7 @@ class WPC_mail {
 		 $result = wp_mail($to, $subject, $mail_text, $headers);
 		 
 		 if($result){
-			$this->wpcmail_save_history_mail($to, $subject, $mail_text, $headers);
+			$this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,$data);
 		 }		 
 		 return $result;
 	}
@@ -251,6 +257,22 @@ class WPC_mail {
 	public function wpcem_register_fields(){
 		//Get all array roles
 		$list_roles = $this->get_all_user_roles();
+		//GET FROM data
+		$data_from = get_option($this->_options_id_from,'');
+		if($data_from && $data_from!=''){
+			$data_from = json_decode($data_from);
+		}else{
+			$data_from['name'] = '';
+			$data_from['email'] = '';
+		}
+		//GET REPLY TO data
+		$data_replyto = get_option($this->_options_id_replyto,'');
+		if($data_replyto && $data_replyto!=''){
+			$data_replyto = json_decode($data_replyto);
+		}else{
+			$data_replyto['name'] = '';
+			$data_replyto['email'] = '';
+		}
 		
 		if( function_exists('acf_add_local_field_group') ){
 			acf_add_local_field_group(array(
@@ -308,7 +330,7 @@ class WPC_mail {
 							'class' => '',
 							'id' => '',
 						),
-						'default_value' => '',
+						'default_value' => $data_from['name'],
 						'placeholder' => '',
 						'prepend' => '',
 						'append' => '',
@@ -327,7 +349,7 @@ class WPC_mail {
 							'class' => '',
 							'id' => '',
 						),
-						'default_value' => '',
+						'default_value' => $data_from['email'],
 						'placeholder' => '',
 						'prepend' => '',
 						'append' => '',
@@ -346,7 +368,7 @@ class WPC_mail {
 							'class' => '',
 							'id' => '',
 						),
-						'default_value' => '',
+						'default_value' => $data_replyto['name'],
 						'placeholder' => '',
 						'prepend' => '',
 						'append' => '',
@@ -365,7 +387,7 @@ class WPC_mail {
 							'class' => '',
 							'id' => '',
 						),
-						'default_value' => '',
+						'default_value' => $data_replyto['email'],
 						'placeholder' => '',
 						'prepend' => '',
 						'append' => '',
@@ -440,13 +462,13 @@ class WPC_mail {
 							'value' => 'wpcem_mail_template',
 						),
 					),
-					array(
-						array(
-							'param' => 'post_type',
-							'operator' => '==',
-							'value' => 'wpcem_email_history',
-						),
-					),
+//					array(
+//						array(
+//							'param' => 'post_type',
+//							'operator' => '==',
+//							'value' => 'wpcem_email_history',
+//						),
+//					),
 				),
 				'menu_order' => 0,
 				'position' => 'normal',
@@ -465,6 +487,82 @@ class WPC_mail {
 			'key' => 'group_5aa91c23cb5c3',
 			'title' => 'E-mails sauvegarde',
 			'fields' => array(
+				array(
+					'key' => 'field_5aa90bc702083',
+					'label' => 'Subject',
+					'name' => 'email_subject_history',
+					'type' => 'text',
+					'instructions' => '',
+					'required' => 0,
+					'conditional_logic' => 0,
+					'wrapper' => array(
+						'width' => '',
+						'class' => '',
+						'id' => '',
+					),
+					'default_value' => '',
+					'placeholder' => '',
+					'prepend' => '',
+					'append' => '',
+					'maxlength' => '',
+				),			  
+				array(
+					'key' => 'field_5aa90c2502084',
+					'label' => 'Body',
+					'name' => 'email_body_history',
+					'type' => 'wysiwyg',
+					'instructions' => '',
+					'required' => 0,
+					'conditional_logic' => 0,
+					'wrapper' => array(
+						'width' => '',
+						'class' => '',
+						'id' => '',
+					),
+					'default_value' => '',
+					'tabs' => 'all',
+					'toolbar' => 'full',
+					'media_upload' => 1,
+					'delay' => 0,
+				),			  
+				array(
+					'key' => 'field_5aa90fef02095',
+					'label' => 'Target manual add', 
+					'name' => 'email_to_history',
+					'type' => 'text',
+					'instructions' => '',
+					'required' => 0,
+					'conditional_logic' => 0,
+					'wrapper' => array(
+						'width' => '',
+						'class' => '',
+						'id' => '',
+					),
+					'default_value' => '',
+					'placeholder' => '',
+					'prepend' => '',
+					'append' => '',
+					'maxlength' => '',
+				),
+				array(
+					'key' => 'field_5aa91027ddee9',
+					'label' => 'Email id code',
+					'name' => 'email_id_code_history',
+					'type' => 'text',
+					'instructions' => '',
+					'required' => 0,
+					'conditional_logic' => 0,
+					'wrapper' => array(
+						'width' => '',
+						'class' => '',
+						'id' => '',
+					),
+					'default_value' => '',
+					'placeholder' => '',
+					'prepend' => '',
+					'append' => '',
+					'maxlength' => '',
+				),
 				array(
 					'key' => 'field_5aa91f52e14da',
 					'label' => 'Mandrill Status',
@@ -502,7 +600,7 @@ class WPC_mail {
 					'prepend' => '',
 					'append' => '',
 					'maxlength' => '',
-				),
+				),			  
 			),
 			'location' => array(
 				array(
@@ -547,8 +645,24 @@ class WPC_mail {
 		return $posts[0];
 	}
 
-	private function wpcmail_save_history_mail(){
-		
+	private function wpcmail_save_history_mail($to, $subject, $mail_text,$key, $data){
+		//create history post
+		$post_data = array(
+			'post_type' => 'wpcem_email_history',
+			'post_status' => 'publish',
+			'post_title' => $subject,
+		);
+		$saved_post = wp_insert_post($post_data);
+		if($saved_post){
+			//do acf data
+			update_field('email_to_history',$to,$saved_post->ID);
+			update_field('email_subject_history',$subject,$saved_post->ID);
+			update_field('email_body_history',$mail_text,$saved_post->ID);
+			update_field('email_id_code_history',$key,$saved_post->ID);
+			
+//			update_field('email_save_mandrill_status',$value,$saved_post->ID);
+//			update_field('email_save_mandrill_historic_status',$value,$saved_post->ID);
+		}
 	}
 	
 	/**
@@ -567,7 +681,8 @@ class WPC_mail {
 		$subject = __($subject,$this->namefiletranslation);
 		//filter in case
 		$subject = apply_filters( 'wpcmail_format_email_subject_filter', $subject);
-		
+		//change text with %client% specific changes (called from mailevents)
+		$text = $this->generic_text_change($text,$data);	
 		//replace elements if there is
 		if(count($data['array_replace_values_subject'])>0){
 			$subject = vsprintf($subject,$data['array_replace_values_subject']);			
@@ -583,8 +698,13 @@ class WPC_mail {
 	private function wpcmail_format_email_text($text,$data){
 		
 		$text = __($text,$this->namefiletranslation);
+		//filster 
 		$text = apply_filters( 'wpcmail_format_email_text_filter', $text);
-		$text = apply_filters('the_content', $text);		
+		//apply the filters of wordpress
+		$text = apply_filters('the_content', $text); 		
+		//change text with %client% specific changes (called from mailevents)
+		$text = $this->generic_text_change($text,$data);		
+		//change text generic data
 		if(count($data['array_replace_values_body'])>0){
 			$text = vsprintf($text,$data['array_replace_values_body']);			
 		}
@@ -600,6 +720,14 @@ class WPC_mail {
 			$mail_text = ob_get_contents();
 		ob_end_clean();
 		return $mail_text;
+	}
+	
+	private function generic_text_change($text_to_return,$data){
+		
+		foreach($data['selectiv_change_text'] as $code=>$texttoreplace){		
+			$text_to_return = str_replace('%'.$code.'%', $texttoreplace, $text_to_return);			
+		}		
+		return $text_to_return;
 	}
 	
 	private function get_all_user_roles(){
