@@ -69,6 +69,14 @@ class WPC_mail {
 			$tosave = json_encode($_POST['trad_id']);
 			update_option($this->_options_id_tradutction,$tosave);			
 		}
+		
+		if(isset($_POST['key_mail_template_test'])){
+			$data = array();
+			$data['tester'] = true;
+			$data['array_replace_values_subject'] = 'ADDED SUBJECT';
+			$data['array_replace_values_body'] = 'ADDED BODY';
+			WPC_mail::get_instance()->wpcmail_mail_sender($_POST['key_mail_template_test'],$data);
+		}
 	}
 	
 	public function wpcemailmanager_main_menu_options(){
@@ -134,7 +142,7 @@ class WPC_mail {
 			$value_email_trad = $data_trad['email'];
 		}
 		echo '<hr>';
-		echo '<p>';		
+		echo '<p>';
 		echo '<form action="" method="POST" >';
 		echo '<div>';
 			echo '<span>Traduction ID for POEDIT option</span>';
@@ -144,6 +152,15 @@ class WPC_mail {
 		echo '<input type="hidden" name="wpcmail_trad_id" value="wpcmail_trad_id">';
 		echo '</form>';
 		echo '</p>';		
+		
+		echo '<hr>';
+		echo '<p>';
+		echo '<form action="" method="POST" >';
+		echo '<span>TEST MAIL</span>';
+		echo '<input type="text" name="key_mail_template_test">';
+		echo '<input type="submit" value="Test mail">';
+		echo '</form>';
+		echo '</p>';
 		
 		echo '</div>';
 	}
@@ -160,48 +177,79 @@ class WPC_mail {
 	 */
 	public function wpcmail_mail_sender($key,$data = array()){
 
-		 //used to find the post by an acf field
-		 $post_acf_data = $this->wpcmail_get_email_type_by_field($key);
-		 if(!$post_acf_data){
-			 return false;
-		 }
-		 
-		 //HEADERS
-		 $headers = array();
-		 $headers[] = 'Content-Type: text/html; charset=UTF-8';		 
-		 
-		 //DESTINATAIRE
-		 $to = $this->wpcmail_get_destinataires_by_postid($post_acf_data->ID,$data);
-		 //SUBJECT
-		 $subject_data = get_field('email_template_subject',$post_acf_data->ID);
-		 $subject = $this->wpcmail_format_email_subject($subject_data,$data);
-		 //BODY TEXT
-		 $body = get_field('$post_acf_data->post_content',$post_acf_data->ID);
-		 $mail_text = $this->wpcmail_format_email_text($body,$data);
-		 //FROM
-		 $from_name = get_field('email_template_sender',$post_acf_data->ID);
-		 $from_email = get_field('email_template_sender_email',$post_acf_data->ID);
-		 if($from_name && $from_email){
-			 $headers[] = 'From: '.$from_name.' <'.$from_email.'>';
-		 }elseif($from_email){
-			 $headers[] = 'From: '.$from_email.'';
-		 }		 
-		 //REPLY TO
-		 $reply_to_name = get_field('email_template_reply-to',$post_acf_data->ID);
-		 $reply_to_email = get_field('email_template_reply-to_email',$post_acf_data->ID);
-		 if($reply_to_name && $reply_to_email){
-			 $headers[] = 'Reply-To: '.$reply_to_name.' <'.$reply_to_email.'>';
-		 }elseif($reply_to_email){
-			 $headers[] = 'Reply-To: '.$reply_to_email.'';
-		 }
-		 
-		 // send email
-		 $result = wp_mail($to, $subject, $mail_text, $headers);
-		 
-		 if($result){
-			$this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,$data);
-		 }		 
-		 return $result;
+		//used to find the post by an acf field
+		$post_acf_data = $this->wpcmail_get_email_type_by_field($key);
+		if(!$post_acf_data){
+			return false;
+		}
+
+		//HEADERS
+		$headers = array();
+		$headers[] = 'Content-Type: text/html; charset=UTF-8';		 
+
+		//DESTINATAIRE
+		if(!isset($data['string_to'])){
+			$data['string_to'] = true;
+		}
+		$to = $this->wpcmail_get_destinataires_by_postid($post_acf_data->ID,$data);
+		//SUBJECT
+		$subject_data = get_field('email_template_subject',$post_acf_data->ID);
+		$subject = $this->wpcmail_format_email_subject($subject_data,$data);
+		//BODY TEXT
+		$body = get_field('email_template_body',$post_acf_data->ID);
+		$template_part_header = get_field('template_name_header',$post_acf_data->ID);
+		$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);		 
+		$mail_text = $this->wpcmail_format_email_text($body,$data,$template_part_header,$template_part_footer);
+		//FROM
+		$from_name = get_field('email_template_sender',$post_acf_data->ID);
+		$from_email = get_field('email_template_sender_email',$post_acf_data->ID);
+		if($from_name && $from_email){
+			$headers[] = 'From: '.$from_name.' <'.$from_email.'>';
+		}elseif($from_email && !$from_email){
+			$headers[] = 'From: '.$from_email.'';
+		}		 
+		//REPLY TO
+		$reply_to_name = get_field('email_template_reply-to',$post_acf_data->ID);
+		$reply_to_email = get_field('email_template_reply-to_email',$post_acf_data->ID);
+		if($reply_to_name && $reply_to_email){
+			$headers[] = 'Reply-To: '.$reply_to_name.' <'.$reply_to_email.'>';
+		}elseif($reply_to_email){
+			$headers[] = 'Reply-To: '.$reply_to_email.'';
+		}
+
+		// send email
+		$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
+
+		//if($result){
+		   $id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,$data);
+		//}		 
+
+		//if tester 
+		if(isset($data['tester'])){
+			echo '<hr>';
+			echo "<pre>", print_r("TO --- INFOS", 1), "</pre>";
+			echo "<pre>", print_r($to, 1), "</pre>";
+			echo '<hr>';
+			echo "<pre>", print_r("SUBJECT --- INFOS", 1), "</pre>";
+			echo "<pre>", print_r($subject, 1), "</pre>";
+			echo '<hr>';
+			echo "<pre>", print_r("MAIL TEXT --- INFOS", 1), "</pre>";
+			echo "<pre>", print_r($mail_text, 1), "</pre>";
+			echo '<hr>';
+			echo "<pre>", print_r("HEADER --- INFOS", 1), "</pre>";
+			echo "<pre>", print_r($headers, 1), "</pre>";
+			echo '<hr>';
+			echo "<pre>", print_r("RESULT SEND MAIL --- INFOS", 1), "</pre>";
+			var_dump($result_send_mail);
+			echo '<hr>';
+			echo "<pre>", print_r("ID POST SAVE --- INFOS", 1), "</pre>";
+			echo "<pre>", print_r($id_history_id, 1), "</pre>";			 
+
+			die("STOP");
+		}		 
+
+
+		return $result_send_mail;
 	}
 	
     public function wpcem_register_cpts() {
@@ -257,6 +305,10 @@ class WPC_mail {
 	public function wpcem_register_fields(){
 		//Get all array roles
 		$list_roles = $this->get_all_user_roles();
+		//Get all pre fabricated events
+		global $wpc_emailevent_o;
+		$keys_code_list = $wpc_emailevent_o->get_mailevents();
+		array_unshift($keys_code_list,__('Select an event','wpc_emailmanager'));
 		//GET FROM data
 		$data_from = get_option($this->_options_id_from,'');
 		if($data_from && $data_from!=''){
@@ -453,6 +505,66 @@ class WPC_mail {
 						'append' => '',
 						'maxlength' => '',
 					),
+					array(
+						'key' => 'field_5ab22b1d0b013',
+						'label' => 'Email id code selector',
+						'name' => 'email_id_code_selector',
+						'type' => 'select',				  
+						'instructions' => '', 
+						'required' => 0,
+						'conditional_logic' => 0,
+						'wrapper' => array(
+							'width' => '',
+							'class' => '',
+							'id' => '',
+						),
+						'choices' => $keys_code_list,
+						'allow_custom' => 0,
+						'save_custom' => 0,
+						'default_value' => array(
+						),
+						'layout' => 'horizontal',
+						'toggle' => 0,
+						'return_format' => 'value',
+					),
+					array(
+						'key' => 'field_5aa91027ddea2',
+						'label' => 'Template name header',
+						'name' => 'template_name_header',
+						'type' => 'text',
+						'instructions' => 'Name without the .php',
+						'required' => 0,
+						'conditional_logic' => 0,
+						'wrapper' => array(
+							'width' => '',
+							'class' => '',
+							'id' => '',
+						),
+						'default_value' => '',
+						'placeholder' => '',
+						'prepend' => '',
+						'append' => '',
+						'maxlength' => '',
+					),
+					array(
+						'key' => 'field_5aa91027ddea3',
+						'label' => 'Template name footer',
+						'name' => 'template_name_footer',
+						'type' => 'text',
+						'instructions' => 'Name without the .php',
+						'required' => 0,
+						'conditional_logic' => 0,
+						'wrapper' => array(
+							'width' => '',
+							'class' => '',
+							'id' => '',
+						),
+						'default_value' => '',
+						'placeholder' => '',
+						'prepend' => '',
+						'append' => '',
+						'maxlength' => '',
+					),					  
 				),
 				'location' => array(
 					array(
@@ -629,13 +741,13 @@ class WPC_mail {
 	 * @param string $key_field_value
 	 * @return post object
 	 */
-	private function wpcmail_get_email_type_by_field($key_field_value){
+	private function wpcmail_get_email_type_by_field($key_field_value,$field_key="email_id_code"){
 		$args = array(
 			'posts_per_page'	=> 1,
 			'post_type'		=> 'wpcem_mail_template',
 			'meta_query'	=> array(
 				array(
-					'key'		=> 'email_id_code',
+					'key'		=> $field_key,
 					'value'		=> $key_field_value,
 					'compare'	=> '='
 				)
@@ -652,17 +764,15 @@ class WPC_mail {
 			'post_status' => 'publish',
 			'post_title' => $subject,
 		);
-		$saved_post = wp_insert_post($post_data);
-		if($saved_post){
+		$saved_post_id = wp_insert_post($post_data);
+		if($saved_post_id){
 			//do acf data
-			update_field('email_to_history',$to,$saved_post->ID);
-			update_field('email_subject_history',$subject,$saved_post->ID);
-			update_field('email_body_history',$mail_text,$saved_post->ID);
-			update_field('email_id_code_history',$key,$saved_post->ID);
-			
-//			update_field('email_save_mandrill_status',$value,$saved_post->ID);
-//			update_field('email_save_mandrill_historic_status',$value,$saved_post->ID);
+			update_field('email_to_history',$to,$saved_post_id);
+			update_field('email_subject_history',$subject,$saved_post_id);
+			update_field('email_body_history',$mail_text,$saved_post_id);
+			update_field('email_id_code_history',$key,$saved_post_id);
 		}
+		return $saved_post_id;
 	}
 	
 	/**
@@ -693,9 +803,9 @@ class WPC_mail {
 	
 	/**
 	* format text for email
-	 * FILTER -> wpcmail_format_email_text_filter
+	* FILTER -> wpcmail_format_email_text_filter
 	*/
-	private function wpcmail_format_email_text($text,$data){
+	private function wpcmail_format_email_text($text,$data,$template_part_header,$template_part_footer){
 		
 		$text = __($text,$this->namefiletranslation);
 		//filster 
@@ -708,17 +818,22 @@ class WPC_mail {
 		if(count($data['array_replace_values_body'])>0){
 			$text = vsprintf($text,$data['array_replace_values_body']);			
 		}
-		 
+		
 		ob_start();            
 			//header
-			get_template_part('template-email_header');
+			if($template_part_header && $template_part_header!=""){
+				get_template_part($template_part_header);
+			}
 			//text mail
 			echo $text;
 			//footer
-			get_template_part('template-email_footer');
+			if($template_part_footer && $template_part_footer!=""){
+				get_template_part($template_part_footer);
+			}
 			//save
 			$mail_text = ob_get_contents();
 		ob_end_clean();
+		
 		return $mail_text;
 	}
 	
@@ -785,7 +900,7 @@ class WPC_mail {
 		}
 		
 		/* return string or array depending of option, default : array */
-		if(isset($data['string'])){
+		if(isset($data['string_to'])){
 			$to_list = implode(',', $to_list);
 		}		
 		return $to_list;		

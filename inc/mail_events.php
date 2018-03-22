@@ -53,12 +53,12 @@ class WPC_mail_events {
 	public function wpc_mail_order_completed($order_id, $old_status, $new_status){
 		$wpc_mail_o = WPC_mail::get_instance();
 //TODO get infos client or other and send it in data
-		$data = array();
-		$data['selectiv_change_text']['client'] = "name client TODO";
-		$wpc_mail_o->wpcmail_mail_sender('woocommerce_order_completed',$data);
+		
+		$mail_template = $wpc_mail_o->wpcmail_get_email_type_by_field('wpc_mail_order_completed_key','email_id_code_selector');		
+		if($mail_template){
+			$data = array();
+$data['selectiv_change_text']['client'] = "name client TODO";
+			$wpc_mail_o->wpcmail_mail_sender('woocommerce_order_completed',$data);
+		}
 	}
-	
-	
-	
-	
 }

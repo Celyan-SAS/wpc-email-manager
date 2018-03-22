@@ -14,8 +14,12 @@
  License: GPL2
  */
 
+include_once(dirname(__FILE__) . '/inc/mail_events.php');
 include_once(dirname(__FILE__) . '/inc/emailmanager.php');
 
 /** Controller Class **/
+global $wpc_emailevent_o;
+$wpc_emailevent_o = new WPC_mail_events();
+
 global $wpc_emailmanager_o;
 $wpc_emailmanager_o = new WPC_mail();
