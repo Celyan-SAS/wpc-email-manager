@@ -11,6 +11,7 @@ class WPC_mail {
 	private $_options_id_from		 = 'wpcmailoptionidfrom';
 	private $_options_id_replyto	 = 'wpcmailoptionidreplyto';
 	private $_options_id_tradutction = 'wpcmailoptionidtraduction';
+	private $_options_template_default = 'wpcmailoptiontemplatedefault';
  
     /**
      * Creates or returns an instance
@@ -51,23 +52,31 @@ class WPC_mail {
 		
 		if(isset($_POST['form_from_default'])){
 			$tosave_from = array();
-			$tosave_from[] = $_POST['from_name_option'];
-			$tosave_from[] = $_POST['from_email_option'];
+			$tosave_from['name'] = $_POST['from_name_option'];
+			$tosave_from['email'] = $_POST['from_email_option'];
 			$tosave = json_encode($tosave_from);
 			update_option($this->_options_id_from,$tosave);
 		}
 		
 		if(isset($_POST['replyto_from_default'])){
 			$tosave_replyto = array();
-			$tosave_replyto[] = $_POST['replyto_name_option'];
-			$tosave_replyto[] = $_POST['replyto_email_option'];
+			$tosave_replyto['name'] = $_POST['replyto_name_option'];
+			$tosave_replyto['email'] = $_POST['replyto_email_option'];
 			$tosave = json_encode($tosave_replyto);
 			update_option($this->_options_id_replyto,$tosave);			
 		}
 		
-		if(isset($_POST['trad_id'])){
-			$tosave = json_encode($_POST['trad_id']);
-			update_option($this->_options_id_tradutction,$tosave);			
+		if(isset($_POST['wpcmail_trad_id'])){
+			update_option($this->_options_id_tradutction,$_POST['wpcmail_trad_id']);			
+		}
+		
+		if(isset($_POST['wpcmail_template_options'])){			 
+			
+			$tosave = json_encode(
+				array(
+				  'header'=>$_POST['wpcmail_template_header'],
+				  'footer'=>$_POST['wpcmail_template_footer']));
+			update_option($this->_options_template_default,$tosave);	
 		}
 		
 		if(isset($_POST['key_mail_template_test'])){
@@ -84,11 +93,11 @@ class WPC_mail {
         echo '<h2>'.__('Options email manager','wpc_emailmanager').'</h2>';
 		
 		/* form option FROM default */
-		$data_from = get_option($this->_options_id_from,false);
+		$data_from = get_option($this->_options_id_from,false);		
 		$value_name_from = "";
 		$value_email_from = "";
 		if($data_from){
-			$data_from = json_decode($data_from);
+			$data_from = json_decode($data_from,true);			
 			$value_name_from = $data_from['name'];
 			$value_email_from = $data_from['email'];
 		}
@@ -114,7 +123,7 @@ class WPC_mail {
 		$value_name_replyto = "";
 		$value_email_replyto = "";
 		if($data_replyto){
-			$data_replyto = json_decode($data_replyto);
+			$data_replyto = json_decode($data_replyto,true);
 			$value_name_replyto = $data_replyto['name'];
 			$value_email_replyto = $data_replyto['email'];
 		}
@@ -139,20 +148,45 @@ class WPC_mail {
 		$data_trad = get_option($this->_options_id_tradutction,false);
 		$value_email_trad = "";
 		if($data_trad){
-			$value_email_trad = $data_trad['email'];
+			$value_email_trad = $data_trad;
 		}
 		echo '<hr>';
 		echo '<p>';
 		echo '<form action="" method="POST" >';
 		echo '<div>';
 			echo '<span>Traduction ID for POEDIT option</span>';
-			echo '<input type="text" name="wpcmail_trad_id" value="'.$value_email_replyto.'">';
+			echo '<input type="text" name="wpcmail_trad_id" value="'.$value_email_trad.'">';
 		echo '</div>';		
 		echo '<input type="submit" value="'.__('Save','wpcemailmanager').'">';
-		echo '<input type="hidden" name="wpcmail_trad_id" value="wpcmail_trad_id">';
+		echo '</form>';
+		echo '</p>';
+		
+		/* form option traductoin id name default */
+		$data_template = get_option($this->_options_template_default,false);
+		$template_header = "";
+		$template_footer = "";
+		if($data_template){
+			$data_template = json_decode($data_template,true);
+			$template_header = $data_template['header'];
+			$template_footer = $data_template['footer'];
+		}
+		echo '<hr>';
+		echo '<p>';
+		echo '<form action="" method="POST" >';
+		echo '<div>';
+			echo '<span>Template header</span>';
+			echo '<input type="text" name="wpcmail_template_header" value="'.$template_header.'">';
+		echo '</div>';
+		echo '<div>';
+			echo '<span>Template footer</span>';
+			echo '<input type="text" name="wpcmail_template_footer" value="'.$template_footer.'">';
+		echo '</div>';
+		echo '<input type="submit" value="'.__('Save','wpcemailmanager').'">';
+		echo '<input type="hidden" name="wpcmail_template_options" value="wpcmail_trad_id">';
 		echo '</form>';
 		echo '</p>';		
 		
+		/* test section */
 		echo '<hr>';
 		echo '<p>';
 		echo '<form action="" method="POST" >';
@@ -171,6 +205,7 @@ class WPC_mail {
 	 * $data['subject'] -> surcharge le sujet dans le template
 	 * $data['array_replace_values_subject'] -> array of values to replace
 	 * $data['array_replace_values_body'] -> array of values to replace
+	 * $data['user_id'] -> user id to find the language template link to get_locale of the user
 	 * 
 	 * @param string $key
 	 * @param array $data
@@ -178,7 +213,11 @@ class WPC_mail {
 	public function wpcmail_mail_sender($key,$data = array()){
 
 		//used to find the post by an acf field
-		$post_acf_data = $this->wpcmail_get_email_type_by_field($key);
+		$user_id = false;
+		if(isset($data['user_id']) && $data['user_id']!=0 && $data['user_id']!=''){
+			$user_id = $data['user_id'];
+		}
+		$post_acf_data = $this->wpcmail_get_email_type_by_field($key,$user_id);
 		if(!$post_acf_data){
 			return false;
 		}
@@ -312,7 +351,7 @@ class WPC_mail {
 		//GET FROM data
 		$data_from = get_option($this->_options_id_from,'');
 		if($data_from && $data_from!=''){
-			$data_from = json_decode($data_from);
+			$data_from = json_decode($data_from,true);
 		}else{
 			$data_from['name'] = '';
 			$data_from['email'] = '';
@@ -320,10 +359,19 @@ class WPC_mail {
 		//GET REPLY TO data
 		$data_replyto = get_option($this->_options_id_replyto,'');
 		if($data_replyto && $data_replyto!=''){
-			$data_replyto = json_decode($data_replyto);
+			$data_replyto = json_decode($data_replyto,true);
 		}else{
 			$data_replyto['name'] = '';
 			$data_replyto['email'] = '';
+		}
+		//GET default template
+		$data_template = get_option($this->_options_template_default,false);
+		$template_header = '';
+		$template_footer = '';
+		if($data_replyto){
+			$data_template = json_decode($data_template,true);
+			$template_header = $data_template['header'];
+			$template_footer = $data_template['footer'];
 		}
 		
 		if( function_exists('acf_add_local_field_group') ){
@@ -540,7 +588,7 @@ class WPC_mail {
 							'class' => '',
 							'id' => '',
 						),
-						'default_value' => '',
+						'default_value' => $template_header,
 						'placeholder' => '',
 						'prepend' => '',
 						'append' => '',
@@ -559,7 +607,7 @@ class WPC_mail {
 							'class' => '',
 							'id' => '',
 						),
-						'default_value' => '',
+						'default_value' => $template_footer,
 						'placeholder' => '',
 						'prepend' => '',
 						'append' => '',
@@ -741,7 +789,8 @@ class WPC_mail {
 	 * @param string $key_field_value
 	 * @return post object
 	 */
-	private function wpcmail_get_email_type_by_field($key_field_value,$field_key="email_id_code"){
+	private function wpcmail_get_email_type_by_field($key_field_value,$target_user_id,$field_key="email_id_code"){
+		
 		$args = array(
 			'posts_per_page'	=> 1,
 			'post_type'		=> 'wpcem_mail_template',
@@ -754,7 +803,19 @@ class WPC_mail {
 			)
 		);	
 		$posts = get_posts( $args );
-		return $posts[0];
+		$return_post = $posts[0];
+		
+		if(is_plugin_active('polylang/polylang.php')){
+			if(!$target_user_id){
+				$target_user_id = get_current_user_id();
+			}
+			$user_locale = get_user_locale($target_user_id);
+			$poly_locale = substr($user_locale, 0,2);
+			$post_id_translated = pll_get_post($posts[0]->ID,$poly_locale);
+			$return_post = get_post($post_id_translated);
+		}
+		
+		return $return_post;
 	}
 
 	private function wpcmail_save_history_mail($to, $subject, $mail_text,$key, $data){
@@ -792,7 +853,7 @@ class WPC_mail {
 		//filter in case
 		$subject = apply_filters( 'wpcmail_format_email_subject_filter', $subject);
 		//change text with %client% specific changes (called from mailevents)
-		$text = $this->generic_text_change($text,$data);	
+		$subject = $this->generic_text_change($subject,$data);
 		//replace elements if there is
 		if(count($data['array_replace_values_subject'])>0){
 			$subject = vsprintf($subject,$data['array_replace_values_subject']);			
