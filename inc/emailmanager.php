@@ -221,9 +221,6 @@ class WPC_mail {
 		if(!$post_acf_data){
 			return false;
 		}
-
-echo "<pre>", print_r("POST   ", 1), "</pre>";
-echo "<pre>", print_r($post_acf_data, 1), "</pre>";
 		
 		//HEADERS
 		$headers = array();
@@ -268,6 +265,9 @@ echo "<pre>", print_r($post_acf_data, 1), "</pre>";
 
 		//if tester 
 		if(isset($data['tester'])){
+			echo '<hr>';
+			echo "<pre>", print_r("POST   ", 1), "</pre>";
+			echo "<pre>", print_r($post_acf_data, 1), "</pre>";
 			echo '<hr>';
 			echo "<pre>", print_r("TO --- INFOS", 1), "</pre>";
 			echo "<pre>", print_r($to, 1), "</pre>";
