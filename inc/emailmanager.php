@@ -222,6 +222,9 @@ class WPC_mail {
 			return false;
 		}
 
+echo "<pre>", print_r("POST   ", 1), "</pre>";
+echo "<pre>", print_r($post_acf_data, 1), "</pre>";
+		
 		//HEADERS
 		$headers = array();
 		$headers[] = 'Content-Type: text/html; charset=UTF-8';		 
@@ -812,7 +815,9 @@ class WPC_mail {
 			$user_locale = get_user_locale($target_user_id);
 			$poly_locale = substr($user_locale, 0,2);
 			$post_id_translated = pll_get_post($posts[0]->ID,$poly_locale);
-			$return_post = get_post($post_id_translated);
+			if($post_id_translated){
+				$return_post = get_post($post_id_translated);
+			}
 		}
 		
 		return $return_post;
