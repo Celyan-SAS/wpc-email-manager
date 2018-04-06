@@ -264,7 +264,7 @@ class WPC_mail {
 		//}		 
 
 		//if tester 
-		if(isset($data['tester'])){
+		if(isset($data['tester']) && $data['tester']===true){
 			echo '<hr>';
 			echo "<pre>", print_r("POST   ", 1), "</pre>";
 			echo "<pre>", print_r($post_acf_data, 1), "</pre>";
