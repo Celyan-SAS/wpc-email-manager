@@ -291,7 +291,7 @@ class WPC_mail {
 		}		 
 
 
-		return $result_send_mail;
+		return $id_history_id;
 	}
 	
     public function wpcem_register_cpts() {
