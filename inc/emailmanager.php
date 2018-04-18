@@ -94,7 +94,7 @@ class WPC_mail {
 			echo '<h2>'.__('LIVE email','wpc_emailmanager').'</h2>';
 			
 //			$_POST['email_key']
-//			$_POST['data']
+//			$_POST['datamail']
 			
 			//$email_saved_id = WPC_mail::get_instance()->wpcmail_mail_sender('confirmation_reservation_recu',$data_mail);
 				
@@ -1013,6 +1013,9 @@ class WPC_mail {
 		$template_part_footer = $this->replace_all_links_in_text($template_part_footer);
 		$template_part_footer = apply_filters('the_content', $template_part_footer);
 		
+		$text = apply_filters( 'emailmanager_email_body', $text );
+		$template_part_header = apply_filters( 'emailmanager_email_header', $template_part_header );
+		$template_part_footer = apply_filters( 'emailmanager_email_footer', $template_part_footer );
 		ob_start();            
 			//header
 //			if($template_part_header && $template_part_header!=""){
