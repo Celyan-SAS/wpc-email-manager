@@ -28,7 +28,7 @@ class WPC_mail {
 
 		add_action( 'init', array($this,'wpcem_register_cpts'),10);
 		add_action( 'init', array($this,'wpcem_register_fields'),11);
-		
+				
 		/**ADMIN**/
         if(!is_admin()){
             return;
@@ -36,6 +36,7 @@ class WPC_mail {
         add_action('admin_menu', array($this, 'wpcmail_menu'));
         add_action('admin_init', array($this, 'wpcmail_process_post'));
 	}
+
   
 	public function wpcmail_menu(){
 		$page_title = 'WPC Email manager';
@@ -199,6 +200,37 @@ class WPC_mail {
 		echo '</div>';
 	}
 	
+	public function get_headerfooter_html($key_template,$headerfooter,$user_id){
+		$poly_locale = false;
+		if(is_plugin_active('polylang/polylang.php')){
+			$poly_locale = pll_current_language('slug');
+			if($user_id){
+				$user_locale = get_user_locale($user_id);
+				$poly_locale = substr($user_locale, 0,2);
+			}
+		}
+		$text_html = '';
+		if($key_template != ''){
+			$sql = "SELECT * FROM `wp_options` WHERE `option_value` LIKE '".$key_template."' ORDER BY `option_id` ASC";
+			global $wpdb;
+			$results = $wpdb->get_results($sql);
+			
+			foreach($results as $result){
+				$front_key = str_replace('key_footer_name','',$result->option_name);
+				
+				$language_term_id = get_option($front_key.'language_'.$headerfooter);
+				$language = get_term_by('id',$language_term_id,'language');
+				$text_html = get_option($front_key.''.$headerfooter.'_html');
+				
+				if(isset($language->slug) && $poly_locale && $language->slug == $poly_locale){
+					
+					break;
+				}
+			}
+		}
+		return $text_html;
+	}
+	
 	/**
 	 * $data support :
 	 * $data['list_emails'] -> add 
@@ -236,8 +268,19 @@ class WPC_mail {
 		$subject = $this->wpcmail_format_email_subject($subject_data,$data);
 		//BODY TEXT
 		$body = get_field('email_template_body',$post_acf_data->ID);
-		$template_part_header = get_field('template_name_header',$post_acf_data->ID);
-		$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);		 
+		
+		//header
+		//$template_part_header = get_field('template_name_header',$post_acf_data->ID);
+		$template_part_header_KEY = get_field('key_header_html_key',$post_acf_data->ID);
+		$template_part_header = $this->get_headerfooter_html($template_part_header_KEY,'header',$user_id);
+		//footer
+		//$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);
+		$template_part_footer_KEY = get_field('key_footer_html_key',$post_acf_data->ID);
+		$template_part_footer = $this->get_headerfooter_html($template_part_footer_KEY,'footer',$user_id);
+		
+echo "<pre>", print_r("TEMPLATE APRT", 1), "</pre>";
+echo "<pre>", print_r($template_part_footer, 1), "</pre>";
+		
 		$mail_text = $this->wpcmail_format_email_text($body,$data,$template_part_header,$template_part_footer);
 		//FROM
 		$from_name = get_field('email_template_sender',$post_acf_data->ID);
@@ -578,12 +621,49 @@ class WPC_mail {
 						'toggle' => 0,
 						'return_format' => 'value',
 					),
+//					array(
+//						'key' => 'field_5aa91027ddea2',
+//						'label' => 'Template name header',
+//						'name' => 'template_name_header',
+//						'type' => 'text',
+//						'instructions' => 'Name without the .php',
+//						'required' => 0,
+//						'conditional_logic' => 0,
+//						'wrapper' => array(
+//							'width' => '',
+//							'class' => '',
+//							'id' => '',
+//						),
+//						'default_value' => $template_header,
+//						'placeholder' => '',
+//						'prepend' => '',
+//						'append' => '',
+//						'maxlength' => '',
+//					),
+//					array(
+//						'key' => 'field_5aa91027ddea3',
+//						'label' => 'Template name footer',
+//						'name' => 'template_name_footer',
+//						'type' => 'text',
+//						'instructions' => 'Name without the .php',
+//						'required' => 0,
+//						'conditional_logic' => 0,
+//						'wrapper' => array(
+//							'width' => '',
+//							'class' => '',
+//							'id' => '',
+//						),
+//						'default_value' => $template_footer,
+//						'placeholder' => '',
+//						'prepend' => '',
+//						'append' => '',
+//						'maxlength' => '',
+//					),					  
 					array(
-						'key' => 'field_5aa91027ddea2',
-						'label' => 'Template name header',
-						'name' => 'template_name_header',
+						'key' => 'field_5aa91025ddea5',
+						'label' => 'Key header name',
+						'name' => 'key_header_html_key',
 						'type' => 'text',
-						'instructions' => 'Name without the .php',
 						'required' => 0,
 						'conditional_logic' => 0,
 						'wrapper' => array(
@@ -591,18 +671,17 @@ class WPC_mail {
 							'class' => '',
 							'id' => '',
 						),
-						'default_value' => $template_header,
+						'default_value' => '',
 						'placeholder' => '',
 						'prepend' => '',
 						'append' => '',
 						'maxlength' => '',
 					),
 					array(
-						'key' => 'field_5aa91027ddea3',
-						'label' => 'Template name footer',
-						'name' => 'template_name_footer',
+						'key' => 'field_5aa91026ddea6',
+						'label' => 'Key footer name',
+						'name' => 'key_footer_html_key',
 						'type' => 'text',
-						'instructions' => 'Name without the .php',
 						'required' => 0,
 						'conditional_logic' => 0,
 						'wrapper' => array(
@@ -610,12 +689,12 @@ class WPC_mail {
 							'class' => '',
 							'id' => '',
 						),
-						'default_value' => $template_footer,
+						'default_value' => '',
 						'placeholder' => '',
 						'prepend' => '',
 						'append' => '',
 						'maxlength' => '',
-					),					  
+					),				  
 				),
 				'location' => array(
 					array(
@@ -885,17 +964,38 @@ class WPC_mail {
 			$text = vsprintf($text,$data['array_replace_values_body']);			
 		}
 		
+		//CHANGE LINKS to real links
+		$regex = '#(["><]?)(https?://[^\s"><\]]+)#im';
+		$text = preg_replace_callback(
+			$regex,
+			function( $matches ) {
+				if( !empty($matches[1]) ) {
+					// do nothing
+					return $matches[0];
+				}
+				$emailbrut = $matches[2];
+				$replacement = '<a href="'.$emailbrut.'">'.$emailbrut.'</a>';
+				return $replacement;
+			},
+			$text
+		);
+		
+		$template_part_header = apply_filters('the_content', $template_part_header);
+		$template_part_footer = apply_filters('the_content', $template_part_footer);
+		
 		ob_start();            
 			//header
-			if($template_part_header && $template_part_header!=""){
-				get_template_part($template_part_header);
-			}
+//			if($template_part_header && $template_part_header!=""){
+//				get_template_part($template_part_header);
+//			}
+			echo $template_part_header;
 			//text mail
 			echo $text;
 			//footer
-			if($template_part_footer && $template_part_footer!=""){
-				get_template_part($template_part_footer);
-			}
+			echo $template_part_footer;
+//			if($template_part_footer && $template_part_footer!=""){
+//				get_template_part($template_part_footer);
+//			}
 			//save
 			$mail_text = ob_get_contents();
 		ob_end_clean();
