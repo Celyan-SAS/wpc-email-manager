@@ -89,7 +89,28 @@ class WPC_mail {
 		}
 	}
 	
+	public function wpcemailmanager_livemail(){
+		echo '<div class="wrap">';
+			echo '<h2>'.__('LIVE email','wpc_emailmanager').'</h2>';
+			
+//			$_POST['email_key']
+//			$_POST['data']
+			
+			//$email_saved_id = WPC_mail::get_instance()->wpcmail_mail_sender('confirmation_reservation_recu',$data_mail);
+				
+			//return /wp-admin/post.php?post=1109&action=edit
+		echo '</div>';
+	}
+	
 	public function wpcemailmanager_main_menu_options(){
+		
+		//LIVE MAIL
+		if($_POST['livemailmanager']){
+			$this->wpcemailmanager_livemail();
+			return;
+		}		
+		
+		//NORMAL PAGE
 		echo '<div class="wrap">';
         echo '<h2>'.__('Options email manager','wpc_emailmanager').'</h2>';
 		
@@ -210,13 +231,14 @@ class WPC_mail {
 			}
 		}
 		$text_html = '';
+		
 		if($key_template != ''){
 			$sql = "SELECT * FROM `wp_options` WHERE `option_value` LIKE '".$key_template."' ORDER BY `option_id` ASC";
 			global $wpdb;
 			$results = $wpdb->get_results($sql);
 			
-			foreach($results as $result){
-				$front_key = str_replace('key_footer_name','',$result->option_name);
+			foreach($results as $result){			
+				$front_key = str_replace('key_'.$headerfooter.'_name','',$result->option_name);
 				
 				$language_term_id = get_option($front_key.'language_'.$headerfooter);
 				$language = get_term_by('id',$language_term_id,'language');
@@ -270,12 +292,12 @@ class WPC_mail {
 		$body = get_field('email_template_body',$post_acf_data->ID);
 		
 		//header
-		//$template_part_header = get_field('template_name_header',$post_acf_data->ID);
-		$template_part_header_KEY = get_field('key_header_html_key',$post_acf_data->ID);
+		//$template_part_header = get_field('template_name_header',$post_acf_data->ID);		
+		$template_part_header_KEY = get_field('key_header_html_key',$post_acf_data->ID);		
 		$template_part_header = $this->get_headerfooter_html($template_part_header_KEY,'header',$user_id);
 		//footer
 		//$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);
-		$template_part_footer_KEY = get_field('key_footer_html_key',$post_acf_data->ID);
+		$template_part_footer_KEY = get_field('key_footer_html_key',$post_acf_data->ID);		
 		$template_part_footer = $this->get_headerfooter_html($template_part_footer_KEY,'footer',$user_id);
 				
 		$mail_text = $this->wpcmail_format_email_text($body,$data,$template_part_header,$template_part_footer);
@@ -943,6 +965,25 @@ class WPC_mail {
 		return $subject;
 	}
 	
+	private function replace_all_links_in_text($text){
+		$regex = '#(["><]?)(https?://[^\s"><\]]+)#im';
+		$text = preg_replace_callback(
+			$regex,
+			function( $matches ) {
+				if( !empty($matches[1]) ) {
+					// do nothing
+					return $matches[0];
+				}
+				$emailbrut = $matches[2];
+				$replacement = '<a href="'.$emailbrut.'">'.$emailbrut.'</a>';
+				return $replacement;
+			},
+			$text
+		);
+			
+		return $text;
+	}
+	
 	/**
 	* format text for email
 	* FILTER -> wpcmail_format_email_text_filter
@@ -962,23 +1003,13 @@ class WPC_mail {
 		}
 		
 		//CHANGE LINKS to real links
-		$regex = '#(["><]?)(https?://[^\s"><\]]+)#im';
-		$text = preg_replace_callback(
-			$regex,
-			function( $matches ) {
-				if( !empty($matches[1]) ) {
-					// do nothing
-					return $matches[0];
-				}
-				$emailbrut = $matches[2];
-				$replacement = '<a href="'.$emailbrut.'">'.$emailbrut.'</a>';
-				return $replacement;
-			},
-			$text
-		);
+		$text = $this->replace_all_links_in_text($text);
 		
 		$template_part_header = apply_filters('the_content', $template_part_header);
+		$template_part_header = $this->replace_all_links_in_text($template_part_header);
+		
 		$template_part_footer = apply_filters('the_content', $template_part_footer);
+		$template_part_footer = $this->replace_all_links_in_text($template_part_footer);
 		
 		ob_start();            
 			//header
