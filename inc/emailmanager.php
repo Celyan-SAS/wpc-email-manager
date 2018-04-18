@@ -277,10 +277,7 @@ class WPC_mail {
 		//$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);
 		$template_part_footer_KEY = get_field('key_footer_html_key',$post_acf_data->ID);
 		$template_part_footer = $this->get_headerfooter_html($template_part_footer_KEY,'footer',$user_id);
-		
-echo "<pre>", print_r("TEMPLATE APRT", 1), "</pre>";
-echo "<pre>", print_r($template_part_footer, 1), "</pre>";
-		
+				
 		$mail_text = $this->wpcmail_format_email_text($body,$data,$template_part_header,$template_part_footer);
 		//FROM
 		$from_name = get_field('email_template_sender',$post_acf_data->ID);
