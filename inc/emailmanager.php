@@ -991,25 +991,27 @@ class WPC_mail {
 	private function wpcmail_format_email_text($text,$data,$template_part_header,$template_part_footer){
 		
 		$text = __($text,$this->namefiletranslation);
-		//filster 
-		$text = apply_filters( 'wpcmail_format_email_text_filter', $text);
-		//apply the filters of wordpress
-		$text = apply_filters('the_content', $text); 		
+		
+		
 		//change text with %client% specific changes (called from mailevents)
 		$text = $this->generic_text_change($text,$data);		
 		//change text generic data
 		if(count($data['array_replace_values_body'])>0){
 			$text = vsprintf($text,$data['array_replace_values_body']);			
 		}
-		
 		//CHANGE LINKS to real links
 		$text = $this->replace_all_links_in_text($text);
+				
+		//filster 
+		$text = apply_filters( 'wpcmail_format_email_text_filter', $text);
+		//apply the filters of wordpress
+		$text = apply_filters('the_content', $text);
 		
+		$template_part_header = $this->replace_all_links_in_text($template_part_header);		
 		$template_part_header = apply_filters('the_content', $template_part_header);
-		$template_part_header = $this->replace_all_links_in_text($template_part_header);
 		
-		$template_part_footer = apply_filters('the_content', $template_part_footer);
 		$template_part_footer = $this->replace_all_links_in_text($template_part_footer);
+		$template_part_footer = apply_filters('the_content', $template_part_footer);
 		
 		ob_start();            
 			//header
