@@ -28,7 +28,7 @@ class WPC_mail {
 
 		add_action( 'init', array($this,'wpcem_register_cpts'),10);
 		add_action( 'init', array($this,'wpcem_register_fields'),11);
-				
+		
 		/**ADMIN**/
         if(!is_admin()){
             return;
@@ -50,6 +50,21 @@ class WPC_mail {
 	}
 	
 	public function wpcmail_process_post(){
+		
+		/** LIVE SEND MAIL **/
+		if(isset($_POST['live_send_mail_form']) && $_POST['live_send_mail_form']){
+			
+			$to = $_POST['toemail'];
+			$subject = $_POST['subjectemail'];
+			$mail_text = $_POST['special_content'];
+			$headers = explode('|',$_POST['headersmail']);
+			$key = $_POST['key_template'];
+						
+			$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
+			$id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,array());
+			
+			do_action('after_live_send_mail_form',$id_history_id);
+		}		
 		
 		if(isset($_POST['form_from_default'])){
 			$tosave_from = array();
@@ -89,27 +104,44 @@ class WPC_mail {
 		}
 	}
 	
-	public function wpcemailmanager_livemail(){
-		echo '<div class="wrap">';
-			echo '<h2>'.__('LIVE email','wpc_emailmanager').'</h2>';
+	public function wpcmail_live_form_edit_mail_sender($key_template,$data_mail){
+		
+		$email_infos = WPC_mail::get_instance()->wpcmail_mail_sender($key_template, $data_mail, false);
+		
+		ob_start();            
+		?>
+		<div id="wpcmail_live_change" class="wrap" style="background-color:white;color:black;width: 50%;margin-left: 25%;">
+			<form action="" method="post">
+				<h2><?php echo __('LIVE email','wpc_emailmanager'); ?></h2>
 			
-//			$_POST['email_key']
-//			$_POST['datamail']
-			
-			//$email_saved_id = WPC_mail::get_instance()->wpcmail_mail_sender('confirmation_reservation_recu',$data_mail);
-				
-			//return /wp-admin/post.php?post=1109&action=edit
-		echo '</div>';
+				<div>
+					<span><?php echo __('Emails','');?> : </span>
+					<input type="text" name="toemail" value="<?php echo $email_infos['to']; ?>">
+				</div>
+				<div>
+					<span><?php echo __('Subject','');?> : </span>
+					<input type="text" name="subjectemail" value="<?php echo $email_infos['subject']; ?>">
+				</div>
+				<div>
+					<span><?php echo __('Body','');?> : </span>
+					<?php
+					wp_editor( $email_infos['mail_text'], 'special_content'); ?>
+				</div>
+				<input type="hidden" name="headersmail" value="<?php echo implode('|',$email_infos['headers']); ?>">
+				<input type="hidden" name="key_template" value="<?php echo $key_template; ?>">
+				<input type="hidden" name="live_send_mail_form" value="1">
+				<input type="submit" value="<?php echo __('Send','wpc_emailmanager'); ?>">
+			</form>
+		</div>
+		<?php
+		$html_return = ob_get_contents();
+		ob_end_clean();
+		
+		return $html_return;	
 	}
 	
 	public function wpcemailmanager_main_menu_options(){
-		
-		//LIVE MAIL
-		if($_POST['livemailmanager']){
-			$this->wpcemailmanager_livemail();
-			return;
-		}		
-		
+
 		//NORMAL PAGE
 		echo '<div class="wrap">';
         echo '<h2>'.__('Options email manager','wpc_emailmanager').'</h2>';
@@ -264,14 +296,16 @@ class WPC_mail {
 	 * @param string $key
 	 * @param array $data
 	 */
-	public function wpcmail_mail_sender($key,$data = array()){
+	public function wpcmail_mail_sender($key,$data = array(),$send_email = true){
 
 		//used to find the post by an acf field
 		$user_id = false;
 		if(isset($data['user_id']) && $data['user_id']!=0 && $data['user_id']!=''){
 			$user_id = $data['user_id'];
 		}
+				
 		$post_acf_data = $this->wpcmail_get_email_type_by_field($key,$user_id);
+		
 		if(!$post_acf_data){
 			return false;
 		}
@@ -319,41 +353,22 @@ class WPC_mail {
 		}
 
 		// send email
-		$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
+		if($send_email){
+			$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
 
-		//if($result){
-		   $id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,$data);
-		//}		 
-
-		//if tester 
-		if(isset($data['tester']) && $data['tester']===true){
-			echo '<hr>';
-			echo "<pre>", print_r("POST   ", 1), "</pre>";
-			echo "<pre>", print_r($post_acf_data, 1), "</pre>";
-			echo '<hr>';
-			echo "<pre>", print_r("TO --- INFOS", 1), "</pre>";
-			echo "<pre>", print_r($to, 1), "</pre>";
-			echo '<hr>';
-			echo "<pre>", print_r("SUBJECT --- INFOS", 1), "</pre>";
-			echo "<pre>", print_r($subject, 1), "</pre>";
-			echo '<hr>';
-			echo "<pre>", print_r("MAIL TEXT --- INFOS", 1), "</pre>";
-			echo "<pre>", print_r($mail_text, 1), "</pre>";
-			echo '<hr>';
-			echo "<pre>", print_r("HEADER --- INFOS", 1), "</pre>";
-			echo "<pre>", print_r($headers, 1), "</pre>";
-			echo '<hr>';
-			echo "<pre>", print_r("RESULT SEND MAIL --- INFOS", 1), "</pre>";
-			var_dump($result_send_mail);
-			echo '<hr>';
-			echo "<pre>", print_r("ID POST SAVE --- INFOS", 1), "</pre>";
-			echo "<pre>", print_r($id_history_id, 1), "</pre>";			 
-
-			die("STOP");
-		}		 
-
-
-		return $id_history_id;
+			//if($result){
+			   $id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,$data);
+			//}		  		   
+			return $id_history_id;
+		}else{
+			
+			return array(
+			  'to'=>$to,
+			  'subject'=>$subject,
+			  'mail_text'=>$mail_text,
+			  'headers'=>$headers
+				);
+		}
 	}
 	
     public function wpcem_register_cpts() {
