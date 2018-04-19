@@ -54,14 +54,41 @@ class WPC_mail {
 		/** LIVE SEND MAIL **/
 		if(isset($_POST['live_send_mail_form']) && $_POST['live_send_mail_form']){
 			
-			$to = $_POST['toemail'];
-			$subject = $_POST['subjectemail'];
-			$mail_text = $_POST['special_content'];
-			$headers = explode('|',$_POST['headersmail']);
-			$key = $_POST['key_template'];
+//			$to = $_POST['toemail'];
+//			$subject = $_POST['subjectemail'];
+//			$mail_text = $_POST['special_content'];
+//			$headers = explode('|',$_POST['headersmail']);
+//			$key_template = $_POST['key_template'];
+//			$user_id = $_POST['key_template'];
+			
+			$data_mail = array(
+			  'user_id'	=>$_POST['key_template'],
+			  'body'	=>stripslashes($_POST['special_content']),
+			  'to'		=>$_POST['toemail'],
+			  'subject'	=>$_POST['subjectemail'],
+			  'headers'	=>explode('|',$_POST['headersmail'])
+			);
+			$id_history_id = WPC_mail::get_instance()->wpcmail_mail_sender_live($_POST['key_template'], $data_mail);
 						
-			$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
-			$id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,array());
+//$mail_text = $this->replace_all_links_in_text($mail_text);
+////filster 
+//$mail_text = apply_filters( 'wpcmail_format_email_text_filter', $mail_text);
+////apply the filters of wordpress
+//$mail_text = apply_filters('the_content', $mail_text);
+			
+//$template_part_header = get_field('template_name_header',$post_acf_data->ID);		
+//$template_part_header_KEY = get_field('key_header_html_key',$post_acf_data->ID);		
+//$template_part_header = $this->get_headerfooter_html($template_part_header_KEY,'header',$user_id);
+////footer
+////$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);
+//$template_part_footer_KEY = get_field('key_footer_html_key',$post_acf_data->ID);		
+//$template_part_footer = $this->get_headerfooter_html($template_part_footer_KEY,'footer',$user_id);
+//
+//
+//$this->wpcmail_format_email_text($text,$data,$template_part_header,$template_part_footer);
+//
+//$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
+//$id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,array());
 			
 			do_action('after_live_send_mail_form',$id_history_id);
 		}		
@@ -129,6 +156,7 @@ class WPC_mail {
 				</div>
 				<input type="hidden" name="headersmail" value="<?php echo implode('|',$email_infos['headers']); ?>">
 				<input type="hidden" name="key_template" value="<?php echo $key_template; ?>">
+				<input type="hidden" name="user_id" value="<?php echo $data_mail['user_id']; ?>">
 				<input type="hidden" name="live_send_mail_form" value="1">
 				<input type="submit" value="<?php echo __('Send','wpc_emailmanager'); ?>">
 			</form>
@@ -285,6 +313,41 @@ class WPC_mail {
 		return $text_html;
 	}
 	
+	public function wpcmail_mail_sender_live($key,$data = array()){
+		//used to find the post by an acf field
+		$user_id = false;
+		if(isset($data['user_id']) && $data['user_id']!=0 && $data['user_id']!=''){
+			$user_id = $data['user_id'];
+		}
+				
+		$post_acf_data = $this->wpcmail_get_email_type_by_field($key,$user_id);
+		
+		if(!$post_acf_data){
+			return false;
+		}
+		
+		//$template_part_header = get_field('template_name_header',$post_acf_data->ID);		
+		$template_part_header_KEY = get_field('key_header_html_key',$post_acf_data->ID);		
+		$template_part_header = $this->get_headerfooter_html($template_part_header_KEY,'header',$user_id);
+		//footer
+		//$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);
+		$template_part_footer_KEY = get_field('key_footer_html_key',$post_acf_data->ID);		
+		$template_part_footer = $this->get_headerfooter_html($template_part_footer_KEY,'footer',$user_id);
+		
+		$body = $data['body'];
+		
+		$mail_text = $this->wpcmail_format_email_text($body,$data,$template_part_header,$template_part_footer);
+		
+		$to = $data['to'];
+		$subject = $data['subject'];
+		$headers = $data['headers'];
+		
+		$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
+		$id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,$data);
+		
+		return $id_history_id;
+	}
+	
 	/**
 	 * $data support :
 	 * $data['list_emails'] -> add 
@@ -326,13 +389,15 @@ class WPC_mail {
 		$body = get_field('email_template_body',$post_acf_data->ID);
 		
 		//header
-		//$template_part_header = get_field('template_name_header',$post_acf_data->ID);		
-		$template_part_header_KEY = get_field('key_header_html_key',$post_acf_data->ID);		
-		$template_part_header = $this->get_headerfooter_html($template_part_header_KEY,'header',$user_id);
-		//footer
-		//$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);
-		$template_part_footer_KEY = get_field('key_footer_html_key',$post_acf_data->ID);		
-		$template_part_footer = $this->get_headerfooter_html($template_part_footer_KEY,'footer',$user_id);
+		if($send_email){
+			//$template_part_header = get_field('template_name_header',$post_acf_data->ID);		
+			$template_part_header_KEY = get_field('key_header_html_key',$post_acf_data->ID);		
+			$template_part_header = $this->get_headerfooter_html($template_part_header_KEY,'header',$user_id);
+			//footer
+			//$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);
+			$template_part_footer_KEY = get_field('key_footer_html_key',$post_acf_data->ID);		
+			$template_part_footer = $this->get_headerfooter_html($template_part_footer_KEY,'footer',$user_id);
+		}
 				
 		$mail_text = $this->wpcmail_format_email_text($body,$data,$template_part_header,$template_part_footer);
 		//FROM
@@ -1005,13 +1070,15 @@ class WPC_mail {
 	*/
 	private function wpcmail_format_email_text($text,$data,$template_part_header,$template_part_footer){
 		
-		$text = __($text,$this->namefiletranslation);
+		if(isset($this->namefiletranslation)){
+			$text = __($text,$this->namefiletranslation);
+		}
 		
 		
 		//change text with %client% specific changes (called from mailevents)
 		$text = $this->generic_text_change($text,$data);		
 		//change text generic data
-		if(count($data['array_replace_values_body'])>0){
+		if(isset($data['array_replace_values_body']) && count($data['array_replace_values_body'])>0){
 			$text = vsprintf($text,$data['array_replace_values_body']);			
 		}
 		//CHANGE LINKS to real links
@@ -1052,10 +1119,11 @@ class WPC_mail {
 	}
 	
 	private function generic_text_change($text_to_return,$data){
-		
-		foreach($data['selectiv_change_text'] as $code=>$texttoreplace){		
-			$text_to_return = str_replace('%'.$code.'%', $texttoreplace, $text_to_return);			
-		}		
+		if(isset($data['selectiv_change_text'])){
+			foreach($data['selectiv_change_text'] as $code=>$texttoreplace){		
+				$text_to_return = str_replace('%'.$code.'%', $texttoreplace, $text_to_return);			
+			}		
+		}
 		return $text_to_return;
 	}
 	
