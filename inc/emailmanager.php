@@ -107,7 +107,6 @@ class WPC_mail {
 	public function wpcmail_live_form_edit_mail_sender($key_template,$data_mail){
 		
 		$email_infos = WPC_mail::get_instance()->wpcmail_mail_sender($key_template, $data_mail, false);
-		
 		ob_start();            
 		?>
 		<div id="wpcmail_live_change" class="wrap" style="background-color:white;color:black;width: 50%;margin-left: 25%;">
@@ -366,6 +365,8 @@ class WPC_mail {
 		$body = get_field('email_template_body',$post_acf_data->ID);
 		
 		//header
+		$template_part_header = '';
+		$template_part_footer = '';
 		if($send_email){
 			//$template_part_header = get_field('template_name_header',$post_acf_data->ID);		
 			$template_part_header_KEY = get_field('key_header_html_key',$post_acf_data->ID);		
@@ -1009,13 +1010,15 @@ class WPC_mail {
 			$subject = $data['subject'];
 		}
 		//translation if needed
-		$subject = __($subject,$this->namefiletranslation);
+		if(isset($this->namefiletranslation)){
+			$subject = __($subject,$this->namefiletranslation);
+		}
 		//filter in case
 		$subject = apply_filters( 'wpcmail_format_email_subject_filter', $subject);
 		//change text with %client% specific changes (called from mailevents)
 		$subject = $this->generic_text_change($subject,$data);
 		//replace elements if there is
-		if(count($data['array_replace_values_subject'])>0){
+		if(isset($data['array_replace_values_subject']) && count($data['array_replace_values_subject'])>0){
 			$subject = vsprintf($subject,$data['array_replace_values_subject']);			
 		}
 		
