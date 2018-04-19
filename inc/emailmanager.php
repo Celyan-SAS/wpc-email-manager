@@ -54,13 +54,6 @@ class WPC_mail {
 		/** LIVE SEND MAIL **/
 		if(isset($_POST['live_send_mail_form']) && $_POST['live_send_mail_form']){
 			
-//			$to = $_POST['toemail'];
-//			$subject = $_POST['subjectemail'];
-//			$mail_text = $_POST['special_content'];
-//			$headers = explode('|',$_POST['headersmail']);
-//			$key_template = $_POST['key_template'];
-//			$user_id = $_POST['key_template'];
-			
 			$data_mail = array(
 			  'user_id'	=>$_POST['key_template'],
 			  'body'	=>stripslashes($_POST['special_content']),
@@ -69,27 +62,7 @@ class WPC_mail {
 			  'headers'	=>explode('|',$_POST['headersmail'])
 			);
 			$id_history_id = WPC_mail::get_instance()->wpcmail_mail_sender_live($_POST['key_template'], $data_mail);
-						
-//$mail_text = $this->replace_all_links_in_text($mail_text);
-////filster 
-//$mail_text = apply_filters( 'wpcmail_format_email_text_filter', $mail_text);
-////apply the filters of wordpress
-//$mail_text = apply_filters('the_content', $mail_text);
-			
-//$template_part_header = get_field('template_name_header',$post_acf_data->ID);		
-//$template_part_header_KEY = get_field('key_header_html_key',$post_acf_data->ID);		
-//$template_part_header = $this->get_headerfooter_html($template_part_header_KEY,'header',$user_id);
-////footer
-////$template_part_footer = get_field('template_name_footer',$post_acf_data->ID);
-//$template_part_footer_KEY = get_field('key_footer_html_key',$post_acf_data->ID);		
-//$template_part_footer = $this->get_headerfooter_html($template_part_footer_KEY,'footer',$user_id);
-//
-//
-//$this->wpcmail_format_email_text($text,$data,$template_part_header,$template_part_footer);
-//
-//$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
-//$id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,array());
-			
+									
 			do_action('after_live_send_mail_form',$id_history_id);
 		}		
 		
