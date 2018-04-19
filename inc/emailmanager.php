@@ -152,13 +152,17 @@ class WPC_mail {
 				<div>
 					<span><?php echo __('Body','');?> : </span>
 					<?php
-					wp_editor( $email_infos['mail_text'], 'special_content'); ?>
+					$editor_options = array(
+					  'media_buttons'=>false,
+					);
+					wp_editor( $email_infos['mail_text'], 'special_content',$editor_options); ?>
 				</div>
 				<input type="hidden" name="headersmail" value="<?php echo implode('|',$email_infos['headers']); ?>">
 				<input type="hidden" name="key_template" value="<?php echo $key_template; ?>">
 				<input type="hidden" name="user_id" value="<?php echo $data_mail['user_id']; ?>">
 				<input type="hidden" name="live_send_mail_form" value="1">
 				<input type="submit" value="<?php echo __('Send','wpc_emailmanager'); ?>">
+				<input type="button" id="email_live_closepopup" value="<?php echo __('Cancel','wpc_emailmanager'); ?>">
 			</form>
 		</div>
 		<?php
@@ -1088,6 +1092,7 @@ class WPC_mail {
 		$text = apply_filters( 'wpcmail_format_email_text_filter', $text);
 		//apply the filters of wordpress
 		$text = apply_filters('the_content', $text);
+		$text = do_shortcode($text);
 		
 		$template_part_header = $this->replace_all_links_in_text($template_part_header);		
 		$template_part_header = apply_filters('the_content', $template_part_header);
