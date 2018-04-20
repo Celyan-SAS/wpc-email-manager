@@ -125,7 +125,7 @@ class WPC_mail {
 					<span><?php echo __('Body','');?> : </span>
 					<?php
 					$editor_options = array(
-					  'media_buttons'=>false,
+					  'media_buttons'=>true,
 					);
 					wp_editor( $email_infos['mail_text'], 'special_content',$editor_options); ?>
 				</div>
@@ -1053,7 +1053,6 @@ class WPC_mail {
 		if(isset($this->namefiletranslation)){
 			$text = __($text,$this->namefiletranslation);
 		}
-		
 		
 		//change text with %client% specific changes (called from mailevents)
 		$text = $this->generic_text_change($text,$data);		
