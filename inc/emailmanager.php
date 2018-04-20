@@ -962,18 +962,22 @@ class WPC_mail {
 			)
 		);	
 		$posts = get_posts( $args );
-		$return_post = $posts[0];
-		
-		if(is_plugin_active('polylang/polylang.php')){
-			if(!$target_user_id){
-				$target_user_id = get_current_user_id();
+		if(isset($posts[0])){
+			$return_post = $posts[0];
+
+			if(is_plugin_active('polylang/polylang.php')){
+				if(!$target_user_id){
+					$target_user_id = get_current_user_id();
+				}
+				$user_locale = get_user_locale($target_user_id);
+				$poly_locale = substr($user_locale, 0,2);
+				$post_id_translated = pll_get_post($posts[0]->ID,$poly_locale);
+				if($post_id_translated){
+					$return_post = get_post($post_id_translated);
+				}
 			}
-			$user_locale = get_user_locale($target_user_id);
-			$poly_locale = substr($user_locale, 0,2);
-			$post_id_translated = pll_get_post($posts[0]->ID,$poly_locale);
-			if($post_id_translated){
-				$return_post = get_post($post_id_translated);
-			}
+		}else{
+			$return_post = false;
 		}
 		
 		return $return_post;
