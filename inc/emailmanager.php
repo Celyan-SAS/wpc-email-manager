@@ -134,7 +134,6 @@ class WPC_mail {
 				<input type="hidden" name="user_id" value="<?php echo $data_mail['user_id']; ?>">
 				<input type="hidden" name="live_send_mail_form" value="1">
 				<input type="submit" value="<?php echo __('Send','wpc_emailmanager'); ?>">
-				<input type="button" id="email_live_closepopup" value="<?php echo __('Cancel','wpc_emailmanager'); ?>">
 			</form>
 		</div>
 		<?php
