@@ -1047,6 +1047,23 @@ class WPC_mail {
 		return $text;
 	}
 	
+	private function replace_elements_woocommerce($data){
+		do_action( 'woocommerce_email_order_details', $order, $sent_to_admin, $plain_text, $email );
+		
+		ob_start();
+		
+		
+			echo $text;
+			
+			
+			//save
+			$mail_text = ob_get_contents();
+		ob_end_clean();
+		
+		return $mail_text;
+		
+	}
+	
 	/**
 	* format text for email
 	* FILTER -> wpcmail_format_email_text_filter
@@ -1070,6 +1087,37 @@ class WPC_mail {
 		$text = apply_filters( 'wpcmail_format_email_text_filter', $text);
 		//apply the filters of wordpress
 		$text = apply_filters('the_content', $text);
+		//$text = $this->replace_elements_woocommerce($text,$data);
+		
+		if(isset($data['woocommerce'])){
+			
+			//woocommerce_email_order_details
+			//woocommerce_email_order_meta
+			//woocommerce_email_customer_details
+			foreach ($data['woocommerce'] as $key_action=>$data_wook){
+				$sent_to_admin = '';
+				if(isset($data_wook['sent_to_admin'])){
+					$sent_to_admin = $data_wook['sent_to_admin'];
+				}
+				$plain_text = '';
+				if(isset($data_wook['plain_text'])){
+					$plain_text = $data_wook['plain_text'];
+				}
+				$email = '';
+				if(isset($data_wook['email'])){
+					$email = $data_wook['email'];
+				}
+				
+				ob_start();
+					do_action( $key_action, $data_wook['order'] , $sent_to_admin, $plain_text, $email );
+					//save
+					$mail_text_woocommerce = ob_get_contents();
+				ob_end_clean();
+				$text = str_replace('%'.$key_action.'%', $mail_text_woocommerce, $text);
+			}
+			
+		}
+		
 		$text = do_shortcode($text);
 		
 		$template_part_header = $this->replace_all_links_in_text($template_part_header);		
