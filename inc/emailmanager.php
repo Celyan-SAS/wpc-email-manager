@@ -107,7 +107,7 @@ class WPC_mail {
 	public function wpcmail_live_form_edit_mail_sender($key_template,$data_mail){
 		
 		$email_infos = WPC_mail::get_instance()->wpcmail_mail_sender($key_template, $data_mail, false);
-		ob_start();            
+		ob_start();            		
 		?>
 		<div id="wpcmail_live_change" class="wrap" style="background-color:white;color:black;width: 50%;margin-left: 25%;">
 			<form action="" method="post">
