@@ -319,6 +319,7 @@ class WPC_mail {
 		
 		$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
 		$id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,$data);
+		do_action('emailmanager_after_mail_send',$data,$id_history_id);
 		
 		return $id_history_id;
 	}
@@ -397,10 +398,10 @@ class WPC_mail {
 		// send email
 		if($send_email){
 			$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);
-
-			//if($result){
-			   $id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,$data);
-			//}		  		   
+			$id_history_id = $this->wpcmail_save_history_mail($to, $subject, $mail_text, $key,$data);
+			
+			do_action('emailmanager_after_mail_send',$data,$id_history_id);
+			
 			return $id_history_id;
 		}else{
 			
