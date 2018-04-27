@@ -134,6 +134,15 @@ class WPC_mail {
 				<input type="hidden" name="user_id" value="<?php echo $data_mail['user_id']; ?>">
 				<input type="hidden" name="live_send_mail_form" value="1">
 				<input type="submit" class="button button-primary button-large" value="<?php echo apply_filters( 'wpc_email_live_submitval', __('Send','wpc_emailmanager') ); ?>">
+				<?php
+				$url_cancel = '';
+				if(isset($data_mail['redirectafterlive'])){
+					$url_cancel = $data_mail['redirectafterlive'];
+				}
+				?>
+				<a class="acf-button button button-primary" 
+				   style="margin-top: 10px;height: 30px;"
+				   href="<?php echo$url_cancel; ?>"><?php echo apply_filters( 'wpc_email_live_cancelval', __('Cancel','wpc_emailmanager') ); ?></a>
 			</form>
 		</div>
 		<?php
