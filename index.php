@@ -17,6 +17,8 @@
 include_once(dirname(__FILE__) . '/inc/mail_events.php');
 include_once(dirname(__FILE__) . '/inc/emailmanager.php');
 
+load_plugin_textdomain( 'wpc_emailmanager', false, plugin_basename( dirname( dirname( __FILE__ ) ) ) . '/languages' );
+
 /** Controller Class **/
 global $wpc_emailevent_o;
 $wpc_emailevent_o = new WPC_mail_events();
