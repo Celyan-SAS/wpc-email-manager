@@ -111,7 +111,7 @@ class WPC_mail {
 		?>
 		<div id="wpcmail_live_change" class="wrap" style="background-color:white;color:black;width: 50%;margin-left: 25%;">
 			<form action="" method="post">
-				<h2><?php echo __('LIVE email','wpc_emailmanager'); ?></h2>
+				<h2><?php echo apply_filters( 'wpc_email_live_title', __('LIVE email','wpc_emailmanager') ); ?></h2>
 			
 				<div>
 					<span><?php echo __('Emails','');?> : </span>
@@ -133,7 +133,7 @@ class WPC_mail {
 				<input type="hidden" name="key_template" value="<?php echo $key_template; ?>">
 				<input type="hidden" name="user_id" value="<?php echo $data_mail['user_id']; ?>">
 				<input type="hidden" name="live_send_mail_form" value="1">
-				<input type="submit" value="<?php echo __('Send','wpc_emailmanager'); ?>">
+				<input type="submit" class="button button-primary button-large" value="<?php echo apply_filters( 'wpc_email_live_submitval', __('Send','wpc_emailmanager') ); ?>">
 			</form>
 		</div>
 		<?php
