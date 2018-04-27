@@ -61,6 +61,9 @@ class WPC_mail {
 			  'subject'	=>$_POST['subjectemail'],
 			  'headers'	=>explode('|',$_POST['headersmail'])
 			);
+			
+			$data_mail = apply_filters('data_before_live_send_mail_form',$data_mail,$_POST);
+			
 			$id_history_id = WPC_mail::get_instance()->wpcmail_mail_sender_live($_POST['key_template'], $data_mail);
 									
 			do_action('after_live_send_mail_form',$id_history_id);
@@ -129,6 +132,9 @@ class WPC_mail {
 					);
 					wp_editor( $email_infos['mail_text'], 'special_content',$editor_options); ?>
 				</div>
+				
+				<?php do_action('emailmanager_hidden_fields_live_form'); ?>
+				
 				<input type="hidden" name="headersmail" value="<?php echo implode('|',$email_infos['headers']); ?>">
 				<input type="hidden" name="key_template" value="<?php echo $key_template; ?>">
 				<input type="hidden" name="user_id" value="<?php echo $data_mail['user_id']; ?>">
