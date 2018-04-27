@@ -114,15 +114,15 @@ class WPC_mail {
 				<h2><?php echo apply_filters( 'wpc_email_live_title', __('LIVE email','wpc_emailmanager') ); ?></h2>
 			
 				<div>
-					<span class="h-item"><?php echo __('Recipients:','');?></span>
+					<span class="h-item"><?php echo __('Recipients:','wpc_emailmanager');?></span>
 					<input type="text" name="toemail" value="<?php echo $email_infos['to']; ?>">
 				</div>
 				<div>
-					<span class="h-item"><?php echo __('Subject:','');?></span>
+					<span class="h-item"><?php echo __('Subject:','wpc_emailmanager');?></span>
 					<input type="text" name="subjectemail" value="<?php echo $email_infos['subject']; ?>">
 				</div>
 				<div>
-					<span class="h-item"><?php echo __('Body:','');?></span>
+					<span class="h-item"><?php echo __('Body:','wpc_emailmanager');?></span>
 					<?php
 					$editor_options = array(
 					  'media_buttons'=>true,
