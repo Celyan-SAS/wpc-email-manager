@@ -1045,6 +1045,9 @@ class WPC_mail {
 	}
 	
 	private function replace_all_links_in_text($text){
+		
+		$text = str_replace('<p>http', '<p> http', $text);
+		
 		$regex = '#(["><]?)(https?://[^\s"><\]]+)#im';
 		$text = preg_replace_callback(
 			$regex,
