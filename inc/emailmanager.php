@@ -65,7 +65,7 @@ class WPC_mail {
 			$data_mail = apply_filters('data_before_live_send_mail_form',$data_mail,$_POST);
 			
 			$id_history_id = WPC_mail::get_instance()->wpcmail_mail_sender_live($_POST['key_template'], $data_mail);
-									
+			
 			do_action('after_live_send_mail_form',$id_history_id);
 		}		
 		
