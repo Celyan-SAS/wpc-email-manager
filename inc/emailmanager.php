@@ -1171,6 +1171,8 @@ class WPC_mail {
 				$text_to_return = str_replace('%'.$code.'%', $texttoreplace, $text_to_return);			
 			}		
 		}
+		//in case there is another %% not changed=> chenge for ""
+		$text_to_return = preg_replace('#\%.*\%#', '', $text_to_return);
 		return $text_to_return;
 	}
 	
