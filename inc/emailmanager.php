@@ -107,7 +107,7 @@ class WPC_mail {
 		}
 	}
 	
-	public function wpcmail_live_form_edit_mail_sender($key_template,$data_mail){
+	public function wpcmail_live_form_edit_mail_sender($key_template,$data_mail,$media_buttons=true){
 		
 		$email_infos = WPC_mail::get_instance()->wpcmail_mail_sender($key_template, $data_mail, false);
 		ob_start();            		
@@ -128,7 +128,7 @@ class WPC_mail {
 					<span class="h-item"><?php echo __('Body:','wpc_emailmanager');?></span>
 					<?php
 					$editor_options = array(
-					  'media_buttons'=>true,
+					  'media_buttons'=>$media_buttons,
 					);
 					wp_editor( $email_infos['mail_text'], 'special_content',$editor_options); ?>
 				</div>
