@@ -1089,6 +1089,8 @@ class WPC_mail {
 	*/
 	private function wpcmail_format_email_text($text,$data,$template_part_header,$template_part_footer){
 		
+		remove_filter( 'the_content', array( $GLOBALS['wp_embed'], 'autoembed' ), 8 );
+		
 		if(isset($this->namefiletranslation)){
 			$text = __($text,$this->namefiletranslation);
 		}
