@@ -1041,6 +1041,7 @@ class WPC_mail {
 			$subject = vsprintf($subject,$data['array_replace_values_subject']);			
 		}
 		
+		$subject = preg_replace('#\%.*\%#', '', $subject);
 		return $subject;
 	}
 	
@@ -1167,6 +1168,8 @@ class WPC_mail {
 			$mail_text = ob_get_contents();
 		ob_end_clean();
 		
+		//last clean
+		$mail_text = preg_replace('#\%.*\%#', '', $mail_text);		
 		return $mail_text;
 	}
 	
@@ -1177,7 +1180,7 @@ class WPC_mail {
 			}		
 		}
 		//in case there is another %% not changed=> chenge for ""
-		$text_to_return = preg_replace('#\%.*\%#', '', $text_to_return);
+		//$text_to_return = preg_replace('#\%.*\%#', '', $text_to_return);
 		return $text_to_return;
 	}
 	
