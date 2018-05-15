@@ -986,6 +986,7 @@ class WPC_mail {
 				}
 				$user_locale = get_user_locale($target_user_id);
 				$poly_locale = substr($user_locale, 0,2);
+				$poly_locale = apply_filters('locale_polylang_find_post',$poly_locale,$field_key,$target_user_id);
 				$post_id_translated = pll_get_post($posts[0]->ID,$poly_locale);
 				if($post_id_translated){
 					$return_post = get_post($post_id_translated);
