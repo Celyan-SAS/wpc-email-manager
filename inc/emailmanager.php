@@ -976,6 +976,10 @@ class WPC_mail {
 				)
 			)
 		);	
+		if(is_plugin_active('polylang/polylang.php')){
+			$args['lang']='';
+		}
+		
 		$posts = get_posts( $args );
 		if(isset($posts[0])){
 			$return_post = $posts[0];
