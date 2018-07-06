@@ -27,7 +27,7 @@ class WPC_mail {
 		add_filter( 'su/data/shortcodes', array($this,'register_avis_custom_shortcode'),10,1);
 
 		add_action( 'init', array($this,'wpcem_register_cpts'),10);
-		add_action( 'init', array($this,'wpcem_register_fields'),11);
+		add_action( 'init', array($this,'wpcem_register_fields'),300);
 		
 		/**ADMIN**/
         if(!is_admin()){
@@ -357,8 +357,13 @@ class WPC_mail {
 		if(isset($data['user_id']) && $data['user_id']!=0 && $data['user_id']!=''){
 			$user_id = $data['user_id'];
 		}
+		
+		$field_key = 'email_id_code';
+		if(isset($data['change_key']) && $data['change_key']!=""){
+			$field_key = $data['change_key'];
+		}
 				
-		$post_acf_data = $this->wpcmail_get_email_type_by_field($key,$user_id);
+		$post_acf_data = $this->wpcmail_get_email_type_by_field($key,$user_id,$field_key);
 		
 		if(!$post_acf_data){
 			return false;
@@ -963,7 +968,7 @@ class WPC_mail {
 	 * @param string $key_field_value
 	 * @return post object
 	 */
-	private function wpcmail_get_email_type_by_field($key_field_value,$target_user_id,$field_key="email_id_code"){
+	public function wpcmail_get_email_type_by_field($key_field_value,$target_user_id,$field_key="email_id_code"){
 		
 		$args = array(
 			'posts_per_page'	=> 1,
@@ -980,14 +985,14 @@ class WPC_mail {
 			$args['lang']='';
 		}
 		
-		$posts = get_posts( $args );
+		$posts = get_posts( $args );		
 		if(isset($posts[0])){
 			$return_post = $posts[0];
-
-			if(is_plugin_active('polylang/polylang.php')){
-				if(!$target_user_id){
-					$target_user_id = get_current_user_id();
-				}
+			
+			if(!$target_user_id){
+				$target_user_id = get_current_user_id();
+			}
+			if(is_plugin_active('polylang/polylang.php') && $target_user_id){
 				$user_locale = get_user_locale($target_user_id);
 				$poly_locale = substr($user_locale, 0,2);
 				$poly_locale = apply_filters('locale_polylang_find_post',$poly_locale,$key_field_value,$target_user_id);
@@ -996,6 +1001,7 @@ class WPC_mail {
 					$return_post = get_post($post_id_translated);
 				}
 			}
+						
 		}else{
 			$return_post = false;
 		}
@@ -1072,22 +1078,16 @@ class WPC_mail {
 		return $text;
 	}
 	
-	private function replace_elements_woocommerce($data){
-		do_action( 'woocommerce_email_order_details', $order, $sent_to_admin, $plain_text, $email );
-		
-		ob_start();
-		
-		
-			echo $text;
-			
-			
-			//save
-			$mail_text = ob_get_contents();
-		ob_end_clean();
-		
-		return $mail_text;
-		
-	}
+//	private function replace_elements_woocommerce($data){
+//		do_action( 'woocommerce_email_order_details', $order, $sent_to_admin, $plain_text, $email );
+//		
+//		ob_start();		
+//			echo $text;
+//			//save
+//			$mail_text = ob_get_contents();
+//		ob_end_clean();		
+//		return $mail_text;		
+//	}
 	
 	/**
 	* format text for email
