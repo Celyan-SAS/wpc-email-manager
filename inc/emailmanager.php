@@ -339,6 +339,13 @@ class WPC_mail {
 		return $id_history_id;
 	}
 	
+	public function wpcmail_mail_sender_from_mailevents($key,$data,$send_email = true){
+		
+		$data['change_key'] = 'email_id_code_selector';
+			
+		return $this->wpcmail_mail_sender($key,$data,$send_email);
+	}
+	
 	/**
 	 * $data support :
 	 * $data['list_emails'] -> add 
@@ -414,7 +421,7 @@ class WPC_mail {
 		}elseif($reply_to_email){
 			$headers[] = 'Reply-To: '.$reply_to_email.'';
 		}
-
+		
 		// send email
 		if($send_email){
 			$result_send_mail = wp_mail($to, $subject, $mail_text, $headers);

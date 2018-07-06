@@ -27,6 +27,8 @@ class WPC_mail_events {
 		$this->_list_events = array(
 		  //'woocommerce_order_completed_init' => __('Woocommerce order completed','wpc_emailmanager'),
 		  'wordpress_new_user_init' => __('Wordpress new user','wpc_emailmanager'),
+		  'wordpress_retrieve_password_init' => __('Wordpress retrieve password','wpc_emailmanager'),
+		  'wordpress_password_reset_init' => __('Wordpress password reset','wpc_emailmanager'),
 		);
 		
 		foreach($this->_list_events as $list_events_key=>$list_events){
@@ -67,6 +69,15 @@ class WPC_mail_events {
 	
 	/**
 	 * WORDPRESS ACTIONS /////////////////////////////////////////////////////////////////////////
+	 */
+	
+	/*
+	 * NEW USER /////////////////////////////////////////////////////////////////////////
+	 */
+	
+	/**
+	 * new user 
+	 * @return type
 	 */
 	private function wordpress_new_user_init(){
 		$args = array(
@@ -120,16 +131,124 @@ class WPC_mail_events {
 		$data['selectiv_change_text']['user_login'] = $user_info->user_login;
 		$data['selectiv_change_text']['link_login'] = network_site_url( "wp-login.php?action=rp&key=$key&login=" . rawurlencode( $user_info->user_login ), 'login' );
 		$data['selectiv_change_text']['link_login_simple'] = wp_login_url();
-		
+
 		//to the user
 		$data['list_emails'] = $user_info->user_email;
 
-		$data['change_key'] = 'email_id_code_selector';
-
-		$response = $wpc_mail_o->wpcmail_mail_sender('wordpress_new_user_init',$data);
+		$response = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_new_user_init',$data);
 //		echo "<pre>", print_r("response", 1), "</pre>";
 //		var_dump($response);
 //		die('test');
 	}
 	
+	/*
+	 * PASSWORD RESET /////////////////////////////////////////////////////////////////////////
+	 */
+	
+	private function wordpress_password_reset_init(){
+		$args = array(
+			'posts_per_page'   => 1,
+			'meta_key'         => 'email_id_code_selector',
+			'meta_value'       => 'wordpress_password_reset_init',
+			'post_type'        => 'wpcem_mail_template',
+		);
+		$list_emails_template = get_posts($args);
+		
+		if(!$list_emails_template || count($list_emails_template)<1){
+			//we dp not overwrite
+			return;
+		}
+		add_action( 'password_reset', array( $this, 'add_password_reset_filters' ) );
+	}
+	
+	public function add_password_reset_filters(){
+		add_filter( 'password_change_notification_title',   array( $this, 'password_reset_change_title_filter'   ), 10, 2 );
+		add_filter( 'password_change_notification_message', array( $this, 'password_reset_change_message_filter' ), 10, 2 );
+	}
+	
+	public function password_reset_change_title_filter( $title, $user_id ) {
+		$wpc_mail_o = WPC_mail::get_instance();
+		
+		$data = array();
+		$data_mail = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_password_reset_init',$data,false);
+		
+		$title = $data_mail['subject'];
+		
+		return $title;
+	}
+	
+	public function password_reset_change_message_filter( $message, $user_id ) {
+		$wpc_mail_o = WPC_mail::get_instance();
+		
+		$data = array();		
+		$data_mail = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_password_reset_init',$data,false);
+		
+		$message = $data_mail['mail_text'];
+		
+		return $message;
+	}
+	
+	/*
+	 * RETRIEVE PASSWORD /////////////////////////////////////////////////////////////////////////
+	 */
+	
+	/**
+	 * retrieve password 
+	 * @return type
+	 */
+	private function wordpress_retrieve_password_init(){
+		$args = array(
+			'posts_per_page'   => 1,
+			'meta_key'         => 'email_id_code_selector',
+			'meta_value'       => 'wordpress_retrieve_password_init',
+			'post_type'        => 'wpcem_mail_template',
+		);
+		$list_emails_template = get_posts($args);
+		
+		if(!$list_emails_template || count($list_emails_template)<1){
+			//we dp not overwrite
+			return;
+		}
+		
+		add_action( 'retrieve_password', array( $this, 'add_retrieve_pass_filters'  ) );
+	}
+	
+	public function add_retrieve_pass_filters(){
+		add_filter( 'wp_mail_content_type' , array($this,'retrieve_password_content_type'));
+		add_filter( 'retrieve_password_title',   array( $this, 'retrieve_pass_title_filter'   ), 10, 3 );
+		add_filter( 'retrieve_password_message', array( $this, 'retrieve_pass_message_filter' ), 10, 4 );
+	}
+	
+	public function retrieve_password_content_type($content_type){
+		return 'text/html';
+	}
+	
+	public function retrieve_pass_title_filter($title, $user_login, $user_data ) {
+		
+		$wpc_mail_o = WPC_mail::get_instance();
+		
+		$data = array();
+		//$data['selectiv_change_text']['loginurl'] = site_url( 'wp-login.php', 'login' );		
+		
+		$data_mail = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_retrieve_password_init',$data,false);
+		
+		$title = $data_mail['subject'];
+		
+		return $title;
+	}
+	
+	public function retrieve_pass_message_filter( $message, $key, $user_login, $user_data ) {
+		
+		$wpc_mail_o = WPC_mail::get_instance();
+		
+		$data = array();
+		$data['selectiv_change_text']['loginurl'] = site_url( 'wp-login.php', 'login' );
+		$data['selectiv_change_text']['reseturl'] = site_url( "wp-login.php?action=rp&key=$key&login=" . rawurlencode( $user_login ), 'login' );		
+		
+		$data_mail = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_retrieve_password_init',$data,false);
+		
+		$message = $data_mail['mail_text'];
+			
+		return $message;
+	}
 }
