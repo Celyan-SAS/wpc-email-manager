@@ -86,6 +86,7 @@ class WPC_mail_events {
 			'meta_key'         => 'email_id_code_selector',
 			'meta_value'       => 'wordpress_new_user_admin_init',
 			'post_type'        => 'wpcem_mail_template',
+			'lang' => ''
 		);
 		$list_emails_template = get_posts($args);
 		
@@ -95,7 +96,7 @@ class WPC_mail_events {
 		}
 		
 		// Moderate user upon registration
-		add_action( 'register_new_user', array( $this, 'wordpress_new_user_admin_message' ), 200 );
+		add_action( 'register_new_user', array( $this, 'wordpress_new_user_admin_message' ), 201 );
 	}
 	
 	public function wordpress_new_user_admin_message($user_id){
@@ -114,8 +115,7 @@ class WPC_mail_events {
 
 		//to the user
 		//$data['list_emails'] = 
-
-		$response = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_new_user_admin_init',$data);		
+		$response = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_new_user_admin_init',$data);	
 	}
 	
 	/**
@@ -130,9 +130,10 @@ class WPC_mail_events {
 			'meta_key'         => 'email_id_code_selector',
 			'meta_value'       => 'wordpress_new_user_init',
 			'post_type'        => 'wpcem_mail_template',
+			'lang' => ''
 		);
 		$list_emails_template = get_posts($args);
-		
+				
 		if(!$list_emails_template || count($list_emails_template)<1){
 			//we dp not overwrite
 			return;
@@ -193,6 +194,7 @@ class WPC_mail_events {
 			'meta_key'         => 'email_id_code_selector',
 			'meta_value'       => 'wordpress_retrieve_password_admin_init',
 			'post_type'        => 'wpcem_mail_template',
+			'lang' => ''
 		);
 		$list_emails_template = get_posts($args);
 		
@@ -235,6 +237,7 @@ class WPC_mail_events {
 			'meta_key'         => 'email_id_code_selector',
 			'meta_value'       => 'wordpress_retrieve_password_init',
 			'post_type'        => 'wpcem_mail_template',
+			'lang' => ''
 		);
 		$list_emails_template = get_posts($args);
 		
