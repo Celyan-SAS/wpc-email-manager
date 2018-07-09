@@ -27,8 +27,9 @@ class WPC_mail_events {
 		$this->_list_events = array(
 		  //'woocommerce_order_completed_init' => __('Woocommerce order completed','wpc_emailmanager'),
 		  'wordpress_new_user_init' => __('Wordpress new user','wpc_emailmanager'),
+		  'wordpress_new_user_admin_init' => __('Wordpress new user for admin','wpc_emailmanager'),
 		  'wordpress_retrieve_password_init' => __('Wordpress retrieve password','wpc_emailmanager'),
-		  'wordpress_password_reset_init' => __('Wordpress password reset','wpc_emailmanager'),
+		  'wordpress_retrieve_password_admin_init' => __('Wordpress retrieve password admin','wpc_emailmanager'),
 		);
 		
 		foreach($this->_list_events as $list_events_key=>$list_events){
@@ -73,13 +74,57 @@ class WPC_mail_events {
 	
 	/*
 	 * NEW USER /////////////////////////////////////////////////////////////////////////
+	 */	
+	/**
+	 * new user -> to whoever configure in the mail template
+	 * @return type
 	 */
+	private function wordpress_new_user_admin_init(){
+		//ADMIN PART
+		$args = array(
+			'posts_per_page'   => 1,
+			'meta_key'         => 'email_id_code_selector',
+			'meta_value'       => 'wordpress_new_user_admin_init',
+			'post_type'        => 'wpcem_mail_template',
+		);
+		$list_emails_template = get_posts($args);
+		
+		if(!$list_emails_template || count($list_emails_template)<1){
+			//we dp not overwrite
+			return;
+		}
+		
+		// Moderate user upon registration
+		add_action( 'register_new_user', array( $this, 'wordpress_new_user_admin_message' ), 200 );
+	}
+	
+	public function wordpress_new_user_admin_message($user_id){
+		global $wpdb;
+		
+		$wpc_mail_o = WPC_mail::get_instance();
+
+		// Set user role to "pending"
+		$user_info = get_userdata( $user_id );
+
+		//data
+		$data = array();
+		$data['selectiv_change_text']['user_login'] = $user_info->user_login;
+		$data['selectiv_change_text']['user_ip'] = $_SERVER['REMOTE_ADDR'];
+		$data['selectiv_change_text']['user_edit_admin'] = site_url().'/wp-admin/user-edit.php?user_id='.$user_id;
+
+		//to the user
+		//$data['list_emails'] = 
+
+		$response = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_new_user_admin_init',$data);		
+	}
 	
 	/**
 	 * new user 
 	 * @return type
 	 */
 	private function wordpress_new_user_init(){
+		
+		//USER PART
 		$args = array(
 			'posts_per_page'   => 1,
 			'meta_key'         => 'email_id_code_selector',
@@ -136,20 +181,17 @@ class WPC_mail_events {
 		$data['list_emails'] = $user_info->user_email;
 
 		$response = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_new_user_init',$data);
-//		echo "<pre>", print_r("response", 1), "</pre>";
-//		var_dump($response);
-//		die('test');
 	}
 	
 	/*
-	 * PASSWORD RESET /////////////////////////////////////////////////////////////////////////
+	 * RETRIEVE PASSWORD ADMIN /////////////////////////////////////////////////////////////////////////
 	 */
 	
-	private function wordpress_password_reset_init(){
+	private function wordpress_retrieve_password_admin_init(){
 		$args = array(
 			'posts_per_page'   => 1,
 			'meta_key'         => 'email_id_code_selector',
-			'meta_value'       => 'wordpress_password_reset_init',
+			'meta_value'       => 'wordpress_retrieve_password_admin_init',
 			'post_type'        => 'wpcem_mail_template',
 		);
 		$list_emails_template = get_posts($args);
@@ -158,40 +200,31 @@ class WPC_mail_events {
 			//we dp not overwrite
 			return;
 		}
-		add_action( 'password_reset', array( $this, 'add_password_reset_filters' ) );
+		add_action( 'retrieve_password', array( $this, 'add_password_reset_filters' ) );
 	}
 	
 	public function add_password_reset_filters(){
-		add_filter( 'password_change_notification_title',   array( $this, 'password_reset_change_title_filter'   ), 10, 2 );
-		add_filter( 'password_change_notification_message', array( $this, 'password_reset_change_message_filter' ), 10, 2 );
+		add_filter( 'retrieve_password_title',   array( $this, 'send_mail_retrieve_password_admin'   ), 10, 3 );
 	}
 	
-	public function password_reset_change_title_filter( $title, $user_id ) {
+	public function send_mail_retrieve_password_admin($title, $user_login, $user_data ) {
+		
 		$wpc_mail_o = WPC_mail::get_instance();
-		
+		//data
 		$data = array();
-		$data_mail = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_password_reset_init',$data,false);
-		
-		$title = $data_mail['subject'];
-		
+		$data['selectiv_change_text']['user_login'] = $user_login;
+		$data['selectiv_change_text']['user_ip'] = $_SERVER['REMOTE_ADDR'];
+		$data['selectiv_change_text']['user_edit_admin'] = site_url().'wp-admin/user-edit.php?user_id='.$user_data->ID;
+		$wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_retrieve_password_admin_init',$data);		
+	
+		//MANDATORY
 		return $title;
 	}
 	
-	public function password_reset_change_message_filter( $message, $user_id ) {
-		$wpc_mail_o = WPC_mail::get_instance();
-		
-		$data = array();		
-		$data_mail = $wpc_mail_o->wpcmail_mail_sender_from_mailevents('wordpress_password_reset_init',$data,false);
-		
-		$message = $data_mail['mail_text'];
-		
-		return $message;
-	}
 	
 	/*
-	 * RETRIEVE PASSWORD /////////////////////////////////////////////////////////////////////////
-	 */
-	
+	 * RETRIEVE PASSWORD -> for user /////////////////////////////////////////////////////////////////////////
+	 */	
 	/**
 	 * retrieve password 
 	 * @return type
