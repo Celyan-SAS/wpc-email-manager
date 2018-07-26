@@ -503,6 +503,7 @@ class WPC_mail {
 		if($data_from && $data_from!=''){
 			$data_from = json_decode($data_from,true);
 		}else{
+			$data_from = array();
 			$data_from['name'] = '';
 			$data_from['email'] = '';
 		}
@@ -511,6 +512,7 @@ class WPC_mail {
 		if($data_replyto && $data_replyto!=''){
 			$data_replyto = json_decode($data_replyto,true);
 		}else{
+			$data_replyto = array();
 			$data_replyto['name'] = '';
 			$data_replyto['email'] = '';
 		}
