@@ -995,6 +995,16 @@ class WPC_mail {
 		}
 		
 		$posts = get_posts( $args );		
+		
+echo "<pre>", print_r("posts", 1), "</pre>";
+echo "<pre>", print_r($posts[0], 1), "</pre>";
+
+echo "<pre>", print_r("is_plugin_active", 1), "</pre>";
+var_dump(is_plugin_active('polylang/polylang.php'));
+
+echo "<pre>", print_r("target_user_id", 1), "</pre>";
+echo "<pre>", print_r($target_user_id, 1), "</pre>";
+		
 		if(isset($posts[0])){
 			$return_post = $posts[0];
 			
@@ -1023,6 +1033,10 @@ die('stop test');
 		}else{
 			$return_post = false;
 		}
+		
+echo "<pre>", print_r("return_post", 1), "</pre>";
+echo "<pre>", print_r($return_post, 1), "</pre>";
+die('STOP -- ');
 		
 		return $return_post;
 	}
