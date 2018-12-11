@@ -1013,7 +1013,8 @@ echo "<pre>", print_r($poly_locale, 1), "</pre>";
 				$post_id_translated = pll_get_post($posts[0]->ID,$poly_locale);
 				
 echo "<pre>", print_r("post_id_translated", 1), "</pre>";
-echo "<pre>", print_r($post_id_translated, 1), "</pre>";				
+echo "<pre>", print_r($post_id_translated, 1), "</pre>";
+die('stop test');
 				if($post_id_translated){
 					$return_post = get_post($post_id_translated);
 				}
