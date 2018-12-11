@@ -996,15 +996,6 @@ class WPC_mail {
 		
 		$posts = get_posts( $args );		
 		
-echo "<pre>", print_r("posts", 1), "</pre>";
-echo "<pre>", print_r($posts[0], 1), "</pre>";
-
-echo "<pre>", print_r("is_plugin_active", 1), "</pre>";
-var_dump(is_plugin_active('polylang/polylang.php'));
-
-echo "<pre>", print_r("target_user_id", 1), "</pre>";
-echo "<pre>", print_r($target_user_id, 1), "</pre>";
-		
 		if(isset($posts[0])){
 			$return_post = $posts[0];
 			
@@ -1015,16 +1006,15 @@ echo "<pre>", print_r($target_user_id, 1), "</pre>";
 				$user_locale = get_user_locale($target_user_id);
 				$poly_locale = substr($user_locale, 0,2);
 				$poly_locale = apply_filters('locale_polylang_find_post',$poly_locale,$key_field_value,$target_user_id);
-				
-				
-echo "<pre>", print_r("POLY", 1), "</pre>";
-echo "<pre>", print_r($poly_locale, 1), "</pre>";
-				
 				$post_id_translated = pll_get_post($posts[0]->ID,$poly_locale);
-				
-echo "<pre>", print_r("post_id_translated", 1), "</pre>";
-echo "<pre>", print_r($post_id_translated, 1), "</pre>";
-die('stop test');
+				if($post_id_translated){
+					$return_post = get_post($post_id_translated);
+				}
+			}elseif(is_plugin_active('polylang/polylang.php') && !$target_user_id){
+				/** in case of a new user for exemple, we take the language of the navigator **/
+				$poly_locale = pll_current_language();
+				$poly_locale = apply_filters('locale_polylang_find_post',$poly_locale,$key_field_value,'');
+				$post_id_translated = pll_get_post($posts[0]->ID,$poly_locale);
 				if($post_id_translated){
 					$return_post = get_post($post_id_translated);
 				}
@@ -1033,11 +1023,7 @@ die('stop test');
 		}else{
 			$return_post = false;
 		}
-		
-echo "<pre>", print_r("return_post", 1), "</pre>";
-echo "<pre>", print_r($return_post, 1), "</pre>";
-die('STOP -- ');
-		
+				
 		return $return_post;
 	}
 
