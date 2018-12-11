@@ -2,7 +2,7 @@
 /**
  *	@package W&Co Custom emails manager
  *	@author W&C
- *	@version 0.0.1
+ *	@version 0.0.2
  */
 /*
  Plugin Name: W&Co Custom emails manager
