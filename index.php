@@ -8,7 +8,7 @@
  Plugin Name: W&Co Custom emails manager
  Plugin URI: https://wordpressandco.fr/
  Description: WP&Co Custom emails manager
- Version: 0.0.1
+ Version: 0.0.2
  Author: Yann Dubois
  Author URI: https://wordpressandco.fr/
  License: GPL2
