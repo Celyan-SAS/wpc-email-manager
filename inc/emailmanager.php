@@ -1192,7 +1192,7 @@ class WPC_mail {
 		ob_end_clean();
 		
 		//last clean
-		$mail_text = preg_replace('#\%.*\%#', '', $mail_text);		
+		$mail_text = preg_replace('#%([a-z]+?)%#', '', $mail_text);		
 		return $mail_text;
 	}
 	
