@@ -536,11 +536,11 @@ class WPC_mail {
 		if( function_exists('acf_add_local_field_group') ){
 			acf_add_local_field_group(array(
 				'key' => 'group_5aa90ba279ba0',
-				'title' => 'Email templates data',
+				'title' => 'Configuration du modèle de message e-mail',
 				'fields' => array(
 					array(
 						'key' => 'field_5aa90bc702081',
-						'label' => 'Subject',
+						'label' => 'Sujet du message',
 						'name' => 'email_template_subject',
 						'type' => 'text',
 						'instructions' => '',
@@ -559,7 +559,7 @@ class WPC_mail {
 					),
 					array(
 						'key' => 'field_5aa90c2502082',
-						'label' => 'Body',
+						'label' => 'Corps du message',
 						'name' => 'email_template_body',
 						'type' => 'wysiwyg',
 						'instructions' => '',
@@ -578,7 +578,7 @@ class WPC_mail {
 					),
 					array(
 						'key' => 'field_5aa90c5602083',
-						'label' => 'Sender name',
+						'label' => "Nom d'expéditeur (De: ...)",
 						'name' => 'email_template_sender',
 						'type' => 'text',
 						'instructions' => '',
@@ -597,7 +597,7 @@ class WPC_mail {
 					),
 					array(
 						'key' => 'field_5aa90c5602084',
-						'label' => 'Sender email',
+						'label' => "Adresse email d'expéditeur",
 						'name' => 'email_template_sender_email',
 						'type' => 'text',
 						'instructions' => '',
@@ -616,7 +616,7 @@ class WPC_mail {
 					),				  
 					array(
 						'key' => 'field_5aa90c9a02084',
-						'label' => 'Reply-to name',
+						'label' => 'Nom du "Répondre à..." (facultatif)',
 						'name' => 'email_template_reply-to',
 						'type' => 'text',
 						'instructions' => '',
@@ -635,7 +635,7 @@ class WPC_mail {
 					),
 					array(
 						'key' => 'field_5aa90c9a02085',
-						'label' => 'Email reply-to',
+						'label' => 'Adresse email du "Répondre à..." (facultatif)',
 						'name' => 'email_template_reply-to_email',
 						'type' => 'text',
 						'instructions' => '',
@@ -654,7 +654,7 @@ class WPC_mail {
 					),				  
 					array(
 						'key' => 'field_5aa90f9202085',
-						'label' => 'Target user group',
+						'label' => 'Groupe(s) de destinataires du message (Pour: ...)',
 						'name' => 'email_template_target_user_group',
 						'type' => 'checkbox',				  
 						'instructions' => '', 
@@ -676,7 +676,7 @@ class WPC_mail {
 					),
 					array(
 						'key' => 'field_5aa90fef02086',
-						'label' => 'Target manual add',
+						'label' => 'Adresse(s) email de destinataire(s) supplémentaires (facultatif, séparer par des virgules si plusieurs)',
 						'name' => 'email_template_target_manual_add',
 						'type' => 'text',
 						'instructions' => '',
@@ -695,7 +695,7 @@ class WPC_mail {
 					),
 					array(
 						'key' => 'field_5aa91027ddee8',
-						'label' => 'Email id code',
+						'label' => 'Identifiant unique de ce modèle de message',
 						'name' => 'email_id_code',
 						'type' => 'text',
 						'instructions' => '',
@@ -714,7 +714,7 @@ class WPC_mail {
 					),
 					array(
 						'key' => 'field_5ab22b1d0b013',
-						'label' => 'Email id code selector',
+						'label' => 'Événement déclencheur du message  (facultatif)',
 						'name' => 'email_id_code_selector',
 						'type' => 'select',				  
 						'instructions' => '', 
@@ -774,7 +774,7 @@ class WPC_mail {
 //					),					  
 					array(
 						'key' => 'field_5aa91025ddea5',
-						'label' => 'Key header name',
+						'label' => "Identifiant de l'en-tête du message (facultatif)",
 						'name' => 'key_header_html_key',
 						'type' => 'text',
 						'required' => 0,
@@ -792,7 +792,7 @@ class WPC_mail {
 					),
 					array(
 						'key' => 'field_5aa91026ddea6',
-						'label' => 'Key footer name',
+						'label' => ' Identifiant de la signature en fin de message (facultatif)',
 						'name' => 'key_footer_html_key',
 						'type' => 'text',
 						'required' => 0,
