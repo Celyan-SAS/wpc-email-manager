@@ -328,7 +328,14 @@ class WPC_mail {
 		
 		$mail_text = $this->wpcmail_format_email_text($body,$data,$template_part_header,$template_part_footer);
 		
-		$to = $data['to'];
+		$to_list = array($data['to']);
+		//$to = $this->wpcmail_get_destinataires_by_postid($post_acf_data->ID,$data);
+		$target_manual_add = get_field('email_template_target_manual_add',$post_acf_data->ID);
+		if($target_manual_add){
+			$to_list[] = $target_manual_add;
+		}
+		$to = implode(',', $to_list);
+		
 		$subject = $data['subject'];
 		$headers = $data['headers'];
 		
