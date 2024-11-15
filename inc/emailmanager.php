@@ -133,7 +133,7 @@ class WPC_mail {
 					wp_editor( $email_infos['mail_text'], 'special_content',$editor_options); ?>
 				</div>
 				
-				<?php do_action('emailmanager_hidden_fields_live_form'); ?>
+				<?php do_action('emailmanager_hidden_fields_live_form',$data_mail); ?>
 				
 				<input type="hidden" name="headersmail" value="<?php echo implode('|',$email_infos['headers']); ?>">
 				<input type="hidden" name="key_template" value="<?php echo $key_template; ?>">
